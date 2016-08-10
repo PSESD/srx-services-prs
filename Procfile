@@ -1,1 +1,1 @@
-web: target/universal/stage/bin/srx-services-admin
+web: target/universal/stage/bin/srx-services-prs

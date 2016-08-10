@@ -1,11 +1,11 @@
-package org.psesd.srx.services.admin
+package org.psesd.srx.services.prs
 
 import org.scalatest.FunSuite
 
 class BuildTests extends FunSuite {
 
   test("package") {
-    assert(Build.name == "srx-services-admin")
+    assert(Build.name == "srx-services-prs")
     assert(Build.version == "1.0")
     assert(Build.buildNumber > 0)
   }

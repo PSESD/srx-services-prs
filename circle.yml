@@ -38,12 +38,12 @@ deployment:
   development:
     branch: development
     heroku:
-      appname: srx-services-admin-dev
+      appname: srx-services-prs-dev
   test:
     branch: test
     heroku:
-      appname: srx-services-admin-test
+      appname: srx-services-prs-test
   production:
     branch: production
     heroku:
-      appname: srx-services-admin
+      appname: srx-services-prs

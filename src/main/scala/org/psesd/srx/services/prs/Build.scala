@@ -1,4 +1,4 @@
-package org.psesd.srx.services.admin
+package org.psesd.srx.services.prs
 
 /** Provides information about current build.
   *
@@ -7,15 +7,15 @@ package org.psesd.srx.services.admin
   * @author Stephen Pugmire (iTrellis, LLC)
   */
 object Build {
-  val name: String = org.psesd.srx.services.admin.BuildInfo.name
+  val name: String = org.psesd.srx.services.prs.BuildInfo.name
 
-  val version: String = org.psesd.srx.services.admin.BuildInfo.version
+  val version: String = org.psesd.srx.services.prs.BuildInfo.version
 
-  val scalaVersion: String = org.psesd.srx.services.admin.BuildInfo.scalaVersion
+  val scalaVersion: String = org.psesd.srx.services.prs.BuildInfo.scalaVersion
 
-  val sbtVersion: String = org.psesd.srx.services.admin.BuildInfo.sbtVersion
+  val sbtVersion: String = org.psesd.srx.services.prs.BuildInfo.sbtVersion
 
-  val buildNumber: Int = org.psesd.srx.services.admin.BuildInfo.buildNumber
+  val buildNumber: Int = org.psesd.srx.services.prs.BuildInfo.buildNumber
 
   val javaVersion: String = scala.util.Properties.javaVersion
 }
