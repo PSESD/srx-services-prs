@@ -1,5 +1,6 @@
 package org.psesd.srx.services.prs
 
+import org.psesd.srx.shared.core.SrxResource
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.data.{Datasource, DatasourceConfig, DatasourceResult}
@@ -16,11 +17,19 @@ class AuthorizedEntity(
                         val id: Int,
                         val name: String,
                         val mainContactId: Option[Int]
-                      ) {
+                      ) extends SrxResource {
+
+  def toXml: Node = {
+    <authorizedEntity>
+      <id>{id.toString}</id>
+      <name>{name}</name>
+      <mainContactId>{mainContactId.getOrElse("").toString}</mainContactId>
+    </authorizedEntity>
+  }
 
 }
 
-object AuthorizedEntity {
+object AuthorizedEntity extends PrsEntity {
   def apply(id: Int, name: String, mainContactId: Option[Int]): AuthorizedEntity = new AuthorizedEntity(id, name, mainContactId)
 
   def apply(authorizedEntityXml: Node): AuthorizedEntity = {

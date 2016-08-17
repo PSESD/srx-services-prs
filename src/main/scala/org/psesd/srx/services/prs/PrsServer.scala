@@ -24,6 +24,8 @@ object PrsServer extends SrxServer {
   private final val DatasourceTimeoutKey = "DATASOURCE_TIMEOUT"
   private final val DatasourceUrlKey = "DATASOURCE_URL"
 
+  private val authorizedEntitiesResource = PrsResource.AuthorizedEntities.toString
+
   private lazy val datasourceConfig = new DatasourceConfig(
     Environment.getProperty(DatasourceUrlKey),
     Environment.getProperty(DatasourceClassNameKey),
@@ -55,65 +57,36 @@ object PrsServer extends SrxServer {
     case _ -> Root =>
       NotImplemented()
 
-    case GET -> Root / "ping" =>
+    case req@GET -> Root / _ if services(req, CoreResource.Ping.toString) =>
       Ok(true.toString)
 
-    case req@GET -> Root / _ if req.pathInfo.startsWith("/info") =>
-      respondWithInfo(getDefaultSrxResponse(req)).toHttpResponse
+    case req@GET -> Root / _ if services(req, CoreResource.Info.toString) =>
+      respondWithInfo(getDefaultSrxResponse(req))
 
-    case req@GET -> Root / _ if req.pathInfo.startsWith("/authorized-entity") =>
-      NotImplemented()
+    case req@GET -> Root / _ if services(req, authorizedEntitiesResource) =>
+      MethodNotAllowed()
 
-    case req@POST -> Root / _ if req.pathInfo.startsWith("/authorized-entity") =>
-      respondWithCreateAuthorizedEntity(getDefaultSrxResponse(req)).toHttpResponse
+    case req@GET -> Root / `authorizedEntitiesResource` / _ =>
+      executeRequest(req, authorizedEntitiesResource, AuthorizedEntityService)
 
-    case req@PUT -> Root / _ if req.pathInfo.startsWith("/authorized-entity") =>
-      NotImplemented()
+    case req@POST -> Root / _ if services(req, authorizedEntitiesResource) =>
+      executeRequest(req, authorizedEntitiesResource, AuthorizedEntityService, AuthorizedEntity.apply)
 
-    case req@DELETE -> Root / _ if req.pathInfo.startsWith("/authorized-entity") =>
-      NotImplemented()
+    case req@PUT -> Root / _ if services(req, authorizedEntitiesResource) =>
+      MethodNotAllowed()
 
-    case req@GET -> Root / _ if req.pathInfo.startsWith("/authorized-entities") =>
-      NotImplemented()
+    case req@PUT -> Root / `authorizedEntitiesResource` / _ =>
+      MethodNotAllowed()
+
+    case req@DELETE -> Root / _ if services(req, authorizedEntitiesResource) =>
+      MethodNotAllowed()
+
+    case req@DELETE -> Root / `authorizedEntitiesResource` / _ =>
+      MethodNotAllowed()
 
     case _ =>
       NotFound()
 
   }
 
-  private def respondWithCreateAuthorizedEntity(srxResponse: SrxResponse): SrxResponse = {
-    if (!srxResponse.hasError) {
-      try {
-
-        val result = AuthorizedEntity.create(AuthorizedEntity(srxResponse.srxRequest.getBodyXml.orNull), datasourceConfig)
-        if(result.success) {
-          srxResponse.sifResponse.statusCode = Created.code
-        } else {
-          val errorMessage = {
-            if(result.exceptions.nonEmpty) {
-              result.exceptions.head.getMessage
-            } else {
-              ""
-            }
-          }
-          srxResponse.setError(new SifError(
-            InternalServerError.code,
-            "Message",
-            "Failed to create authorized entity.",
-            errorMessage
-          ))
-        }
-        srxResponse.sifResponse.bodyXml = Option(SifCreateResponse().addResult(result.id.getOrElse(""), Created.code).toXml)
-      } catch {
-        case e: Exception =>
-          srxResponse.setError(new SifError(
-            InternalServerError.code,
-            "Message",
-            "Failed to create authorized entity.",
-            e.getMessage
-          ))
-      }
-    }
-    srxResponse
-  }
 }
