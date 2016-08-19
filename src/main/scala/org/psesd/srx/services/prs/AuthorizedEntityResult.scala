@@ -3,7 +3,7 @@ package org.psesd.srx.services.prs
 import org.psesd.srx.shared.core.SrxResourceResult
 import org.psesd.srx.shared.core.exceptions.ArgumentNullException
 import org.psesd.srx.shared.core.sif.SifRequestAction.SifRequestAction
-import org.psesd.srx.shared.core.sif.{SifCreateResponse, SifHttpStatusCode, SifRequestAction}
+import org.psesd.srx.shared.core.sif._
 import org.psesd.srx.shared.data.DatasourceResult
 
 import scala.xml.Node
@@ -25,12 +25,29 @@ class AuthorizedEntityResult(requestAction: SifRequestAction, httpStatusCode: In
     exceptions ++= result.exceptions
   }
 
+  var id = 0
+
+  def getId: Int = {
+    if(result == null) {
+      id
+    } else {
+      result.id.getOrElse(id.toString).toInt
+    }
+  }
+
+  def setId(authorizedEntityId: Int) = {
+    id = authorizedEntityId
+  }
+
   def toXml: Option[Node] = {
 
     requestAction match {
 
       case SifRequestAction.Create =>
-        Option(SifCreateResponse().addResult(result.id.getOrElse(""), statusCode).toXml)
+        Option(SifCreateResponse().addResult(getId.toString, statusCode).toXml)
+
+      case SifRequestAction.Delete =>
+        Option(SifDeleteResponse().addResult(getId.toString, statusCode).toXml)
 
       case SifRequestAction.Query =>
         if (statusCode == SifHttpStatusCode.Ok) {
@@ -38,6 +55,9 @@ class AuthorizedEntityResult(requestAction: SifRequestAction, httpStatusCode: In
         } else {
           None
         }
+
+      case SifRequestAction.Update =>
+        Option(SifUpdateResponse().addResult(getId.toString, statusCode).toXml)
 
       case _ =>
         None

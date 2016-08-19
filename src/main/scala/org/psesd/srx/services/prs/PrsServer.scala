@@ -64,7 +64,7 @@ object PrsServer extends SrxServer {
       respondWithInfo(getDefaultSrxResponse(req))
 
     case req@GET -> Root / _ if services(req, authorizedEntitiesResource) =>
-      MethodNotAllowed()
+      executeRequest(req, authorizedEntitiesResource, AuthorizedEntityService)
 
     case req@GET -> Root / `authorizedEntitiesResource` / _ =>
       executeRequest(req, authorizedEntitiesResource, AuthorizedEntityService)
@@ -76,13 +76,13 @@ object PrsServer extends SrxServer {
       MethodNotAllowed()
 
     case req@PUT -> Root / `authorizedEntitiesResource` / _ =>
-      MethodNotAllowed()
+      executeRequest(req, authorizedEntitiesResource, AuthorizedEntityService, AuthorizedEntity.apply)
 
     case req@DELETE -> Root / _ if services(req, authorizedEntitiesResource) =>
       MethodNotAllowed()
 
     case req@DELETE -> Root / `authorizedEntitiesResource` / _ =>
-      MethodNotAllowed()
+      executeRequest(req, authorizedEntitiesResource, AuthorizedEntityService)
 
     case _ =>
       NotFound()
