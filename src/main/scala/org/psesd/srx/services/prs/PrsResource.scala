@@ -11,4 +11,12 @@ import org.psesd.srx.shared.core.extensions.ExtendedEnumeration
 object PrsResource extends ExtendedEnumeration {
   type PrsResource = Value
   val AuthorizedEntities = Value("authorizedEntities")
+  val Consents = Value("consents")
+  val DataObjects = Value("sifdataobjects")
+  val DataSets = Value("dataSets")
+  val Districts = Value("districts")
+  val ExternalServices = Value("services")
+  val Filters = Value("filters")
+  val Personnel = Value("personnel")
+  val Students = Value("students")
 }

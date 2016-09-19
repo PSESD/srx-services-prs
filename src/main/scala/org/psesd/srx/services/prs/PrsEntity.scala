@@ -1,5 +1,9 @@
 package org.psesd.srx.services.prs
 
+import org.json4s.JValue
+
+import scala.xml.Node
+
 /** Interface for Privacy Rules Service entity objects.
   *
   * @version 1.0
@@ -7,5 +11,9 @@ package org.psesd.srx.services.prs
   * @author Stephen Pugmire (iTrellis, LLC)
   */
 trait PrsEntity {
+
+  def toJson: JValue
+
+  def toXml: Node
 
 }

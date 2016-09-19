@@ -7,6 +7,7 @@ import org.psesd.srx.shared.core.sif._
 import org.psesd.srx.shared.core._
 import org.psesd.srx.shared.data.DatasourceConfig
 
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext
 
 /** SRX Privacy Rules Service server.
@@ -24,7 +25,19 @@ object PrsServer extends SrxServer {
   private final val DatasourceTimeoutKey = "DATASOURCE_TIMEOUT"
   private final val DatasourceUrlKey = "DATASOURCE_URL"
 
+  private final val AuthorizedEntityIdParam = "authorizedEntityId"
+  private final val DataSetIdParam = "dataSetId"
+  private final val DistrictIdParam = "districtId"
+  private final val DistrictServiceIdParam = "districtServiceId"
+
   private val authorizedEntitiesResource = PrsResource.AuthorizedEntities.toString
+  private val dataObjectsResource = PrsResource.DataObjects.toString
+  private val dataSetsResource = PrsResource.DataSets.toString
+  private val districtsResource = PrsResource.Districts.toString
+  private val externalServicesResource = PrsResource.ExternalServices.toString
+  private val filtersResource = PrsResource.Filters.toString
+  private val personnelResource = PrsResource.Personnel.toString
+  private val studentsResource = PrsResource.Students.toString
 
   private lazy val datasourceConfig = new DatasourceConfig(
     Environment.getProperty(DatasourceUrlKey),
@@ -63,30 +76,271 @@ object PrsServer extends SrxServer {
     case req@GET -> Root / _ if services(req, CoreResource.Info.toString) =>
       respondWithInfo(getDefaultSrxResponse(req))
 
+
+    /* AUTHORIZED ENTITY */
     case req@GET -> Root / _ if services(req, authorizedEntitiesResource) =>
-      executeRequest(req, authorizedEntitiesResource, AuthorizedEntityService)
+      executeRequest(req, None, authorizedEntitiesResource, AuthorizedEntity)
 
     case req@GET -> Root / `authorizedEntitiesResource` / _ =>
-      executeRequest(req, authorizedEntitiesResource, AuthorizedEntityService)
+      executeRequest(req, None,authorizedEntitiesResource, AuthorizedEntity)
 
     case req@POST -> Root / _ if services(req, authorizedEntitiesResource) =>
-      executeRequest(req, authorizedEntitiesResource, AuthorizedEntityService, AuthorizedEntity.apply)
+      executeRequest(req, None,authorizedEntitiesResource, AuthorizedEntity, AuthorizedEntity.apply)
 
     case req@PUT -> Root / _ if services(req, authorizedEntitiesResource) =>
       MethodNotAllowed()
 
     case req@PUT -> Root / `authorizedEntitiesResource` / _ =>
-      executeRequest(req, authorizedEntitiesResource, AuthorizedEntityService, AuthorizedEntity.apply)
+      executeRequest(req, None,authorizedEntitiesResource, AuthorizedEntity, AuthorizedEntity.apply)
 
     case req@DELETE -> Root / _ if services(req, authorizedEntitiesResource) =>
       MethodNotAllowed()
 
     case req@DELETE -> Root / `authorizedEntitiesResource` / _ =>
-      executeRequest(req, authorizedEntitiesResource, AuthorizedEntityService)
+      executeRequest(req, None,authorizedEntitiesResource, AuthorizedEntity)
+
+
+    /* DATA OBJECT */
+    case req@GET -> Root / `dataSetsResource` / IntVar(dataSetId) / _ if services(req, dataSetsResource, dataSetId.toString, dataObjectsResource) =>
+      executeRequest(req, addRouteParams(DataSetIdParam, dataSetId.toString), dataObjectsResource, DataObject)
+
+    case req@GET -> Root / `dataSetsResource` / IntVar(dataSetId) / `dataObjectsResource` / _ =>
+      executeRequest(req, addRouteParams(DataSetIdParam, dataSetId.toString), dataObjectsResource, DataObject)
+
+    case req@POST -> Root / `dataSetsResource` / IntVar(dataSetId) / _ if services(req, dataSetsResource, dataSetId.toString, dataObjectsResource) =>
+      executeRequest(req, addRouteParams(DataSetIdParam, dataSetId.toString), dataObjectsResource, DataObject, DataObject.apply)
+
+    case req@PUT -> Root / `dataSetsResource` / IntVar(dataSetId) / _ if services(req, dataSetsResource, dataSetId.toString, dataObjectsResource) =>
+      MethodNotAllowed()
+
+    case req@PUT -> Root / `dataSetsResource` / IntVar(dataSetId) / `dataObjectsResource` / _ =>
+      executeRequest(req, addRouteParams(DataSetIdParam, dataSetId.toString), dataObjectsResource, DataObject, DataObject.apply)
+
+    case req@DELETE -> Root / `dataSetsResource` / IntVar(dataSetId) / _ if services(req, dataSetsResource, dataSetId.toString, dataObjectsResource) =>
+      MethodNotAllowed()
+
+    case req@DELETE -> Root / `dataSetsResource` / IntVar(dataSetId) / `dataObjectsResource` / _ =>
+      executeRequest(req, addRouteParams(DataSetIdParam, dataSetId.toString), dataObjectsResource, DataObject)
+
+
+    /* DATA SET */
+    case req@GET -> Root / _ if services(req, dataSetsResource) =>
+      executeRequest(req, None, dataSetsResource, DataSet)
+
+    case req@GET -> Root / `dataSetsResource` / _ =>
+      executeRequest(req, None,dataSetsResource, DataSet)
+
+    case req@POST -> Root / _ if services(req, dataSetsResource) =>
+      executeRequest(req, None,dataSetsResource, DataSet, DataSet.apply)
+
+    case req@PUT -> Root / _ if services(req, dataSetsResource) =>
+      MethodNotAllowed()
+
+    case req@PUT -> Root / `dataSetsResource` / _ =>
+      executeRequest(req, None,dataSetsResource, DataSet, DataSet.apply)
+
+    case req@DELETE -> Root / _ if services(req, dataSetsResource) =>
+      MethodNotAllowed()
+
+    case req@DELETE -> Root / `dataSetsResource` / _ =>
+      executeRequest(req, None,dataSetsResource, DataSet)
+
+
+    /* DISTRICT */
+    case req@GET -> Root / _ if services(req, districtsResource) =>
+      executeRequest(req, None, districtsResource, District)
+
+    case req@GET -> Root / `districtsResource` / _ =>
+      executeRequest(req, None,districtsResource, District)
+
+    case req@POST -> Root / _ if services(req, districtsResource) =>
+      executeRequest(req, None,districtsResource, District, District.apply)
+
+    case req@PUT -> Root / _ if services(req, districtsResource) =>
+      MethodNotAllowed()
+
+    case req@PUT -> Root / `districtsResource` / _ =>
+      executeRequest(req, None,districtsResource, District, District.apply)
+
+    case req@DELETE -> Root / _ if services(req, districtsResource) =>
+      MethodNotAllowed()
+
+    case req@DELETE -> Root / `districtsResource` / _ =>
+      executeRequest(req, None,districtsResource, District)
+
+
+    /* DISTRICT SERVICE */
+    case req@GET -> Root / `districtsResource` / IntVar(districtId) / _ if services(req, districtsResource, districtId.toString, externalServicesResource) =>
+      executeRequest(req, addRouteParams(DistrictIdParam, districtId.toString), externalServicesResource, DistrictService)
+
+    case req@GET -> Root / `districtsResource` / IntVar(districtId) / `externalServicesResource` / _ =>
+      executeRequest(req, addRouteParams(DistrictIdParam, districtId.toString), externalServicesResource, DistrictService)
+
+    case req@POST -> Root / `districtsResource` / IntVar(districtId) / _ if services(req, districtsResource, districtId.toString, externalServicesResource) =>
+      executeRequest(req, addRouteParams(DistrictIdParam, districtId.toString), externalServicesResource, DistrictService, DistrictService.apply)
+
+    case req@PUT -> Root / `districtsResource` / IntVar(districtId) / _ if services(req, districtsResource, districtId.toString, externalServicesResource) =>
+      MethodNotAllowed()
+
+    case req@PUT -> Root / `districtsResource` / IntVar(districtId) / `externalServicesResource` / _ =>
+      executeRequest(req, addRouteParams(DistrictIdParam, districtId.toString), externalServicesResource, DistrictService, DistrictService.apply)
+
+    case req@DELETE -> Root / `districtsResource` / IntVar(districtId) / _ if services(req, districtsResource, districtId.toString, externalServicesResource) =>
+      MethodNotAllowed()
+
+    case req@DELETE -> Root / `districtsResource` / IntVar(districtId) / `externalServicesResource` / _ =>
+      executeRequest(req, addRouteParams(DistrictIdParam, districtId.toString), externalServicesResource, DistrictService)
+
+
+    /* DISTRICT SERVICE PERSONNEL */
+    case req@GET -> Root / `districtsResource` / IntVar(districtId) / `externalServicesResource` / IntVar(districtServiceId) / _ if services(req, districtsResource, districtId.toString, externalServicesResource, districtServiceId.toString, personnelResource) =>
+      executeRequest(req, addRouteParams(DistrictIdParam, districtId.toString, DistrictServiceIdParam, districtServiceId.toString), personnelResource, DistrictServicePersonnel)
+
+    case req@GET -> Root / `districtsResource` / IntVar(districtId) / `externalServicesResource` / IntVar(districtServiceId) / `personnelResource` / _ =>
+      executeRequest(req, addRouteParams(DistrictIdParam, districtId.toString, DistrictServiceIdParam, districtServiceId.toString), personnelResource, DistrictServicePersonnel)
+
+    case req@POST -> Root / `districtsResource` / IntVar(districtId) / `externalServicesResource` / IntVar(districtServiceId) / _ if services(req, districtsResource, districtId.toString, externalServicesResource, districtServiceId.toString, personnelResource) =>
+      executeRequest(req, addRouteParams(DistrictIdParam, districtId.toString, DistrictServiceIdParam, districtServiceId.toString), personnelResource, DistrictServicePersonnel, DistrictServicePersonnel.apply)
+
+    case req@PUT -> Root / `districtsResource` / IntVar(districtId) / `externalServicesResource` / IntVar(districtServiceId) / _ if services(req, districtsResource, districtId.toString, externalServicesResource, districtServiceId.toString, personnelResource) =>
+      MethodNotAllowed()
+
+    case req@PUT -> Root / `districtsResource` / IntVar(districtId) / `externalServicesResource` / IntVar(districtServiceId) / `personnelResource` / _ =>
+      executeRequest(req, addRouteParams(DistrictIdParam, districtId.toString, DistrictServiceIdParam, districtServiceId.toString), personnelResource, DistrictServicePersonnel, DistrictServicePersonnel.apply)
+
+    case req@DELETE -> Root / `districtsResource` / IntVar(districtId) / `externalServicesResource` / IntVar(districtServiceId) / _ if services(req, districtsResource, districtId.toString, externalServicesResource, districtServiceId.toString, personnelResource) =>
+      MethodNotAllowed()
+
+    case req@DELETE -> Root / `districtsResource` / IntVar(districtId) / `externalServicesResource` / IntVar(districtServiceId) / `personnelResource` / _ =>
+      executeRequest(req, addRouteParams(DistrictIdParam, districtId.toString, DistrictServiceIdParam, districtServiceId.toString), personnelResource, DistrictServicePersonnel)
+
+
+    /* DISTRICT SERVICE STUDENT */
+    case req@GET -> Root / `districtsResource` / IntVar(districtId) / `externalServicesResource` / IntVar(districtServiceId) / _ if services(req, districtsResource, districtId.toString, externalServicesResource, districtServiceId.toString, studentsResource) =>
+      executeRequest(req, addRouteParams(DistrictIdParam, districtId.toString, DistrictServiceIdParam, districtServiceId.toString), studentsResource, Student)
+
+    case req@GET -> Root / `districtsResource` / IntVar(districtId) / `externalServicesResource` / IntVar(districtServiceId) / `studentsResource` / _ =>
+      executeRequest(req, addRouteParams(DistrictIdParam, districtId.toString, DistrictServiceIdParam, districtServiceId.toString), studentsResource, Student)
+
+    case req@POST -> Root / `districtsResource` / IntVar(districtId) / `externalServicesResource` / IntVar(districtServiceId) / _ if services(req, districtsResource, districtId.toString, externalServicesResource, districtServiceId.toString, studentsResource) =>
+      executeRequest(req, addRouteParams(DistrictIdParam, districtId.toString, DistrictServiceIdParam, districtServiceId.toString), studentsResource, Student, Student.apply)
+
+    case req@PUT -> Root / `districtsResource` / IntVar(districtId) / `externalServicesResource` / IntVar(districtServiceId) / _ if services(req, districtsResource, districtId.toString, externalServicesResource, districtServiceId.toString, studentsResource) =>
+      MethodNotAllowed()
+
+    case req@PUT -> Root / `districtsResource` / IntVar(districtId) / `externalServicesResource` / IntVar(districtServiceId) / `studentsResource` / _ =>
+      executeRequest(req, addRouteParams(DistrictIdParam, districtId.toString, DistrictServiceIdParam, districtServiceId.toString), studentsResource, Student, Student.apply)
+
+    case req@DELETE -> Root / `districtsResource` / IntVar(districtId) / `externalServicesResource` / IntVar(districtServiceId) / _ if services(req, districtsResource, districtId.toString, externalServicesResource, districtServiceId.toString, studentsResource) =>
+      MethodNotAllowed()
+
+    case req@DELETE -> Root / `districtsResource` / IntVar(districtId) / `externalServicesResource` / IntVar(districtServiceId) / `studentsResource` / _ =>
+      executeRequest(req, addRouteParams(DistrictIdParam, districtId.toString, DistrictServiceIdParam, districtServiceId.toString), studentsResource, Student)
+
+
+    /* DISTRICT STUDENT */
+    case req@GET -> Root / `districtsResource` / IntVar(districtId) / _ if services(req, districtsResource, districtId.toString, studentsResource) =>
+      executeRequest(req, addRouteParams(DistrictIdParam, districtId.toString), studentsResource, Student)
+
+    case req@GET -> Root / `districtsResource` / IntVar(districtId) / `studentsResource` / _ =>
+      executeRequest(req, addRouteParams(DistrictIdParam, districtId.toString), studentsResource, Student)
+
+    case req@POST -> Root / `districtsResource` / IntVar(districtId) / _ if services(req, districtsResource, districtId.toString, studentsResource) =>
+      MethodNotAllowed()
+
+    case req@PUT -> Root / `districtsResource` / IntVar(districtId) / _ if services(req, districtsResource, districtId.toString, studentsResource) =>
+      MethodNotAllowed()
+
+    case req@PUT -> Root / `districtsResource` / IntVar(districtId) / `studentsResource` / _ =>
+      MethodNotAllowed()
+
+    case req@DELETE -> Root / `districtsResource` / IntVar(districtId) / _ if services(req, districtsResource, districtId.toString, studentsResource) =>
+      MethodNotAllowed()
+
+    case req@DELETE -> Root / `districtsResource` / IntVar(districtId) / `studentsResource` / _ =>
+      MethodNotAllowed()
+
+
+    /* EXTERNAL SERVICE */
+    case req@GET -> Root / `authorizedEntitiesResource` / IntVar(authorizedEntityId) / _ if services(req, authorizedEntitiesResource, authorizedEntityId.toString, externalServicesResource) =>
+      executeRequest(req, addRouteParams(AuthorizedEntityIdParam, authorizedEntityId.toString), externalServicesResource, ExternalService)
+
+    case req@GET -> Root / `authorizedEntitiesResource` / IntVar(authorizedEntityId) / `externalServicesResource` / _ =>
+      executeRequest(req, addRouteParams(AuthorizedEntityIdParam, authorizedEntityId.toString), externalServicesResource, ExternalService)
+
+    case req@POST -> Root / `authorizedEntitiesResource` / IntVar(authorizedEntityId) / _ if services(req, authorizedEntitiesResource, authorizedEntityId.toString, externalServicesResource) =>
+      executeRequest(req, addRouteParams(AuthorizedEntityIdParam, authorizedEntityId.toString), externalServicesResource, ExternalService, ExternalService.apply)
+
+    case req@PUT -> Root / `authorizedEntitiesResource` / IntVar(authorizedEntityId) / _ if services(req, authorizedEntitiesResource, authorizedEntityId.toString, externalServicesResource) =>
+      MethodNotAllowed()
+
+    case req@PUT -> Root / `authorizedEntitiesResource` / IntVar(authorizedEntityId) / `externalServicesResource` / _ =>
+      executeRequest(req, addRouteParams(AuthorizedEntityIdParam, authorizedEntityId.toString), externalServicesResource, ExternalService, ExternalService.apply)
+
+    case req@DELETE -> Root / `authorizedEntitiesResource` / IntVar(authorizedEntityId) / _ if services(req, authorizedEntitiesResource, authorizedEntityId.toString, externalServicesResource) =>
+      MethodNotAllowed()
+
+    case req@DELETE -> Root / `authorizedEntitiesResource` / IntVar(authorizedEntityId) / `externalServicesResource` / _ =>
+      executeRequest(req, addRouteParams(AuthorizedEntityIdParam, authorizedEntityId.toString), externalServicesResource, ExternalService)
+
+
+    /* FILTERS */
+    case req@GET -> Root / _ if services(req, filtersResource) =>
+      executeRequest(req, addRequestParams(req), filtersResource, PrsFilter)
+
+    case req@GET -> Root / `filtersResource` / _ =>
+      executeRequest(req, addRequestParams(req), filtersResource, PrsFilter)
+
+    case req@POST -> Root / _ if services(req, districtsResource) =>
+      MethodNotAllowed()
+
+    case req@PUT -> Root / _ if services(req, districtsResource) =>
+      MethodNotAllowed()
+
+    case req@PUT -> Root / `districtsResource` / _ =>
+      MethodNotAllowed()
+
+    case req@DELETE -> Root / _ if services(req, districtsResource) =>
+      MethodNotAllowed()
+
+    case req@DELETE -> Root / `districtsResource` / _ =>
+      MethodNotAllowed()
+
+
+    /* PERSONNEL */
+    case req@GET -> Root / `authorizedEntitiesResource` / IntVar(authorizedEntityId) / _ if services(req, authorizedEntitiesResource, authorizedEntityId.toString, personnelResource) =>
+      executeRequest(req, addRouteParams(AuthorizedEntityIdParam, authorizedEntityId.toString), personnelResource, Personnel)
+
+    case req@GET -> Root / `authorizedEntitiesResource` / IntVar(authorizedEntityId) / `personnelResource` / _ =>
+      executeRequest(req, addRouteParams(AuthorizedEntityIdParam, authorizedEntityId.toString), personnelResource, Personnel)
+
+    case req@POST -> Root / `authorizedEntitiesResource` / IntVar(authorizedEntityId) / _ if services(req, authorizedEntitiesResource, authorizedEntityId.toString, personnelResource) =>
+      executeRequest(req, addRouteParams(AuthorizedEntityIdParam, authorizedEntityId.toString), personnelResource, Personnel, Personnel.apply)
+
+    case req@PUT -> Root / `authorizedEntitiesResource` / IntVar(authorizedEntityId) / _ if services(req, authorizedEntitiesResource, authorizedEntityId.toString, personnelResource) =>
+      MethodNotAllowed()
+
+    case req@PUT -> Root / `authorizedEntitiesResource` / IntVar(authorizedEntityId) / `personnelResource` / _ =>
+      executeRequest(req, addRouteParams(AuthorizedEntityIdParam, authorizedEntityId.toString), personnelResource, Personnel, Personnel.apply)
+
+    case req@DELETE -> Root / `authorizedEntitiesResource` / IntVar(authorizedEntityId) / _ if services(req, authorizedEntitiesResource, authorizedEntityId.toString, personnelResource) =>
+      MethodNotAllowed()
+
+    case req@DELETE -> Root / `authorizedEntitiesResource` / IntVar(authorizedEntityId) / `personnelResource` / _ =>
+      executeRequest(req, addRouteParams(AuthorizedEntityIdParam, authorizedEntityId.toString), personnelResource, Personnel)
+
 
     case _ =>
       NotFound()
 
+  }
+
+  def addRequestParams(req: Request): Option[List[SifRequestParameter]] = {
+    val params = ArrayBuffer[SifRequestParameter]()
+    for (p <- req.params) {
+      params += SifRequestParameter(p._1, p._2)
+    }
+    Some(params.toList)
   }
 
 }
