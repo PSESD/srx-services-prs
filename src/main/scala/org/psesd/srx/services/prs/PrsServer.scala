@@ -2,9 +2,9 @@ package org.psesd.srx.services.prs
 
 import org.http4s._
 import org.http4s.dsl._
+import org.psesd.srx.shared.core._
 import org.psesd.srx.shared.core.config.Environment
 import org.psesd.srx.shared.core.sif._
-import org.psesd.srx.shared.core._
 import org.psesd.srx.shared.data.DatasourceConfig
 
 import scala.collection.mutable.ArrayBuffer
@@ -15,7 +15,7 @@ import scala.concurrent.ExecutionContext
   * @version 1.0
   * @since 1.0
   * @author Stephen Pugmire (iTrellis, LLC)
-  * */
+  **/
 object PrsServer extends SrxServer {
 
   private final val ServerUrlKey = "SERVER_URL"
@@ -29,15 +29,6 @@ object PrsServer extends SrxServer {
   private final val DataSetIdParam = "dataSetId"
   private final val DistrictIdParam = "districtId"
   private final val DistrictServiceIdParam = "districtServiceId"
-
-  private val authorizedEntitiesResource = PrsResource.AuthorizedEntities.toString
-  private val dataObjectsResource = PrsResource.DataObjects.toString
-  private val dataSetsResource = PrsResource.DataSets.toString
-  private val districtsResource = PrsResource.Districts.toString
-  private val externalServicesResource = PrsResource.ExternalServices.toString
-  private val filtersResource = PrsResource.Filters.toString
-  private val personnelResource = PrsResource.Personnel.toString
-  private val studentsResource = PrsResource.Students.toString
 
   private lazy val datasourceConfig = new DatasourceConfig(
     Environment.getProperty(DatasourceUrlKey),
@@ -62,6 +53,15 @@ object PrsServer extends SrxServer {
     )
   )
 
+  private val authorizedEntitiesResource = PrsResource.AuthorizedEntities.toString
+  private val dataObjectsResource = PrsResource.DataObjects.toString
+  private val dataSetsResource = PrsResource.DataSets.toString
+  private val districtsResource = PrsResource.Districts.toString
+  private val externalServicesResource = PrsResource.ExternalServices.toString
+  private val filtersResource = PrsResource.Filters.toString
+  private val personnelResource = PrsResource.Personnel.toString
+  private val studentsResource = PrsResource.Students.toString
+
   override def serviceRouter(implicit executionContext: ExecutionContext) = HttpService {
 
     case req@GET -> Root =>
@@ -82,22 +82,22 @@ object PrsServer extends SrxServer {
       executeRequest(req, None, authorizedEntitiesResource, AuthorizedEntity)
 
     case req@GET -> Root / `authorizedEntitiesResource` / _ =>
-      executeRequest(req, None,authorizedEntitiesResource, AuthorizedEntity)
+      executeRequest(req, None, authorizedEntitiesResource, AuthorizedEntity)
 
     case req@POST -> Root / _ if services(req, authorizedEntitiesResource) =>
-      executeRequest(req, None,authorizedEntitiesResource, AuthorizedEntity, AuthorizedEntity.apply)
+      executeRequest(req, None, authorizedEntitiesResource, AuthorizedEntity, AuthorizedEntity.apply)
 
     case req@PUT -> Root / _ if services(req, authorizedEntitiesResource) =>
       MethodNotAllowed()
 
     case req@PUT -> Root / `authorizedEntitiesResource` / _ =>
-      executeRequest(req, None,authorizedEntitiesResource, AuthorizedEntity, AuthorizedEntity.apply)
+      executeRequest(req, None, authorizedEntitiesResource, AuthorizedEntity, AuthorizedEntity.apply)
 
     case req@DELETE -> Root / _ if services(req, authorizedEntitiesResource) =>
       MethodNotAllowed()
 
     case req@DELETE -> Root / `authorizedEntitiesResource` / _ =>
-      executeRequest(req, None,authorizedEntitiesResource, AuthorizedEntity)
+      executeRequest(req, None, authorizedEntitiesResource, AuthorizedEntity)
 
 
     /* DATA OBJECT */
@@ -128,22 +128,22 @@ object PrsServer extends SrxServer {
       executeRequest(req, None, dataSetsResource, DataSet)
 
     case req@GET -> Root / `dataSetsResource` / _ =>
-      executeRequest(req, None,dataSetsResource, DataSet)
+      executeRequest(req, None, dataSetsResource, DataSet)
 
     case req@POST -> Root / _ if services(req, dataSetsResource) =>
-      executeRequest(req, None,dataSetsResource, DataSet, DataSet.apply)
+      executeRequest(req, None, dataSetsResource, DataSet, DataSet.apply)
 
     case req@PUT -> Root / _ if services(req, dataSetsResource) =>
       MethodNotAllowed()
 
     case req@PUT -> Root / `dataSetsResource` / _ =>
-      executeRequest(req, None,dataSetsResource, DataSet, DataSet.apply)
+      executeRequest(req, None, dataSetsResource, DataSet, DataSet.apply)
 
     case req@DELETE -> Root / _ if services(req, dataSetsResource) =>
       MethodNotAllowed()
 
     case req@DELETE -> Root / `dataSetsResource` / _ =>
-      executeRequest(req, None,dataSetsResource, DataSet)
+      executeRequest(req, None, dataSetsResource, DataSet)
 
 
     /* DISTRICT */
@@ -151,22 +151,22 @@ object PrsServer extends SrxServer {
       executeRequest(req, None, districtsResource, District)
 
     case req@GET -> Root / `districtsResource` / _ =>
-      executeRequest(req, None,districtsResource, District)
+      executeRequest(req, None, districtsResource, District)
 
     case req@POST -> Root / _ if services(req, districtsResource) =>
-      executeRequest(req, None,districtsResource, District, District.apply)
+      executeRequest(req, None, districtsResource, District, District.apply)
 
     case req@PUT -> Root / _ if services(req, districtsResource) =>
       MethodNotAllowed()
 
     case req@PUT -> Root / `districtsResource` / _ =>
-      executeRequest(req, None,districtsResource, District, District.apply)
+      executeRequest(req, None, districtsResource, District, District.apply)
 
     case req@DELETE -> Root / _ if services(req, districtsResource) =>
       MethodNotAllowed()
 
     case req@DELETE -> Root / `districtsResource` / _ =>
-      executeRequest(req, None,districtsResource, District)
+      executeRequest(req, None, districtsResource, District)
 
 
     /* DISTRICT SERVICE */
