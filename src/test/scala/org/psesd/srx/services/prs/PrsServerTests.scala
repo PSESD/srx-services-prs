@@ -1092,18 +1092,60 @@ class PrsServerTests extends FunSuite {
 
   /* PRS FILTER ROUTES */
 
+  test("create filters") {
+    if (Environment.isLocal) {
+      val resource = PrsResource.Filters.toString
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource, SifZone("highline"), SifContext("default"))
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      sifRequest.body = Some(<filter/>.toString)
+      println("CREATE RESOURCE: %s".format(resource))
+      val response = new SifConsumer().create(sifRequest)
+      printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.MethodNotAllowed))
+    }
+  }
+
+  test("delete filters") {
+    if (Environment.isLocal) {
+      val resource = PrsResource.Filters.toString
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource, SifZone("highline"), SifContext("default"))
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      println("CREATE RESOURCE: %s".format(resource))
+      val response = new SifConsumer().delete(sifRequest)
+      printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.MethodNotAllowed))
+    }
+  }
+
+  test("update filters") {
+    if (Environment.isLocal) {
+      val resource = PrsResource.Filters.toString
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource, SifZone("highline"), SifContext("default"))
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      sifRequest.body = Some(<filter/>.toString)
+      println("CREATE RESOURCE: %s".format(resource))
+      val response = new SifConsumer().update(sifRequest)
+      printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.MethodNotAllowed))
+    }
+  }
+
   test("query filters") {
     if (Environment.isLocal) {
       val resource = PrsResource.Filters.toString
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource, SifZone("highline"), SifContext("default"))
       sifRequest.generatorId = Some(TestValues.generatorId)
+      sifRequest.addHeader("authorizedEntityId", "1")
+      sifRequest.addHeader("districtStudentId", "9999999999")
+      sifRequest.addHeader("externalServiceId", "2")
+      sifRequest.addHeader("objectType", "sre")
+      sifRequest.addHeader("personnelId", "3")
       println("QUERY RESOURCE: %s".format(resource))
       val response = new SifConsumer().query(sifRequest)
       printlnResponse(response)
       assert(response.statusCode.equals(SifHttpStatusCode.Ok))
     }
   }
-
 
 
   private def delayedInterrupt(delay: Long) {

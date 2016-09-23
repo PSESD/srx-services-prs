@@ -286,24 +286,24 @@ object PrsServer extends SrxServer {
 
     /* FILTERS */
     case req@GET -> Root / _ if services(req, filtersResource) =>
-      executeRequest(req, addRequestParams(req), filtersResource, PrsFilter)
+      executeRequest(req, addPrsFilterParameters(req), filtersResource, PrsFilter)
 
     case req@GET -> Root / `filtersResource` / _ =>
-      executeRequest(req, addRequestParams(req), filtersResource, PrsFilter)
+      executeRequest(req, addPrsFilterParameters(req), filtersResource, PrsFilter)
 
-    case req@POST -> Root / _ if services(req, districtsResource) =>
+    case req@POST -> Root / _ if services(req, filtersResource) =>
       MethodNotAllowed()
 
-    case req@PUT -> Root / _ if services(req, districtsResource) =>
+    case req@PUT -> Root / _ if services(req, filtersResource) =>
       MethodNotAllowed()
 
-    case req@PUT -> Root / `districtsResource` / _ =>
+    case req@PUT -> Root / `filtersResource` / _ =>
       MethodNotAllowed()
 
-    case req@DELETE -> Root / _ if services(req, districtsResource) =>
+    case req@DELETE -> Root / _ if services(req, filtersResource) =>
       MethodNotAllowed()
 
-    case req@DELETE -> Root / `districtsResource` / _ =>
+    case req@DELETE -> Root / `filtersResource` / _ =>
       MethodNotAllowed()
 
 
@@ -335,10 +335,15 @@ object PrsServer extends SrxServer {
 
   }
 
-  def addRequestParams(req: Request): Option[List[SifRequestParameter]] = {
+  def addPrsFilterParameters(req: Request): Option[List[SifRequestParameter]] = {
     val params = ArrayBuffer[SifRequestParameter]()
-    for (p <- req.params) {
-      params += SifRequestParameter(p._1, p._2)
+    for (h <- req.headers) {
+      val headerName = h.name.value.toLowerCase
+      if(headerName == PrsFilter.AuthorizedEntityIdParameter.toLowerCase) params += SifRequestParameter(PrsFilter.AuthorizedEntityIdParameter, h.value)
+      if(headerName == PrsFilter.DistrictStudentIdParameter.toLowerCase) params += SifRequestParameter(PrsFilter.DistrictStudentIdParameter, h.value)
+      if(headerName == PrsFilter.ExternalServiceIdParameter.toLowerCase) params += SifRequestParameter(PrsFilter.ExternalServiceIdParameter, h.value)
+      if(headerName == PrsFilter.ObjectTypeParameter.toLowerCase) params += SifRequestParameter(PrsFilter.ObjectTypeParameter, h.value)
+      if(headerName == PrsFilter.PersonnelIdParameter.toLowerCase) params += SifRequestParameter(PrsFilter.PersonnelIdParameter, h.value)
     }
     Some(params.toList)
   }
