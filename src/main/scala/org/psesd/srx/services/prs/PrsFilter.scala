@@ -122,7 +122,7 @@ object PrsFilter extends PrsEntityService {
       personnelId = if (personnelIdParam.isDefined && !personnelIdParam.get.value.isNullOrEmpty) personnelIdParam.get.value else null
 
       val zoneIdParam = parameters.find(p => p.key.toLowerCase == ZoneIdParameter.toLowerCase)
-      zoneId = if (zoneIdParam.isDefined && !districtStudentIdParam.get.value.isNullOrEmpty) zoneIdParam.get.value else throw new ArgumentInvalidException(ZoneIdParameter + " parameter")
+      zoneId = if (zoneIdParam.isDefined && !zoneIdParam.get.value.isNullOrEmpty) zoneIdParam.get.value else throw new ArgumentInvalidException(ZoneIdParameter + " parameter")
 
       try {
         val datasource = new Datasource(datasourceConfig)
