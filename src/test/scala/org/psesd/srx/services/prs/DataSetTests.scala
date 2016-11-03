@@ -37,8 +37,8 @@ class DataSetTests extends FunSuite {
     val dataSet = DataSet(
       <dataSet>
         <id>{id}</id>
-        <dataSetName>{name}</dataSetName>
-        <dataSetDescription>{description}</dataSetDescription>
+        <name>{name}</name>
+        <description>{description}</description>
         <dataObjects>
           <dataObject>
             <id>456</id>
@@ -61,8 +61,8 @@ class DataSetTests extends FunSuite {
     val description = "firstName"
     val dataSet = DataSet(
       <dataSet>
-        <dataSetName>{name}</dataSetName>
-        <dataSetDescription>{description}</dataSetDescription>
+        <name>{name}</name>
+        <description>{description}</description>
         <dataObjects>
           <dataObject>
             <filterType>test filter</filterType>

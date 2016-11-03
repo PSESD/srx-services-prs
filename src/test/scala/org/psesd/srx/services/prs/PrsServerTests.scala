@@ -843,8 +843,8 @@ class PrsServerTests extends FunSuite {
       val resource = PrsResource.DataSets.toString
       val dataSet = DataSet(
         <dataSet>
-          <dataSetName>sre</dataSetName>
-          <dataSetDescription>firstName</dataSetDescription>
+          <name>sre</name>
+          <description>firstName</description>
           <dataObjects>
             <dataObject>
               <filterType>test filter</filterType>

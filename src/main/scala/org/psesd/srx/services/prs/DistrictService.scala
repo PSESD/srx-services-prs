@@ -418,7 +418,12 @@ object DistrictService extends PrsEntityService {
           row.getString("expiration_date").getOrElse(""),
           row.getBoolean("requires_personnel").getOrElse(false),
           {
-            if(dataSetId.isDefined) Some(ArrayBuffer[DataSet](DataSet(dataSetId.get.toInt, None, None, None))) else Some(ArrayBuffer[DataSet]())
+            if(dataSetId.isDefined) Some(ArrayBuffer[DataSet](DataSet(
+              dataSetId.get.toInt,
+              row.getString("data_set_name"),
+              row.getString("data_set_description"),
+              None
+            ))) else Some(ArrayBuffer[DataSet]())
           }
         )
       }

@@ -31,8 +31,8 @@ class DataSet(
   def toXml: Node = {
     <dataSet>
       <id>{id.toString}</id>
-      {optional(name.orNull, <dataSetName>{name.orNull}</dataSetName>)}
-      {optional(description.orNull, <dataSetDescription>{description.orNull}</dataSetDescription>)}
+      {optional(name.orNull, <name>{name.orNull}</name>)}
+      {optional(description.orNull, <description>{description.orNull}</description>)}
       {optional({if(dataObjects.isDefined) "true" else null}, <dataObjects>{if(dataObjects.isDefined) dataObjects.get.map(d => d.toXml)}</dataObjects>)}
     </dataSet>
   }
@@ -71,8 +71,8 @@ object DataSet extends PrsEntityService {
       throw new ArgumentInvalidException("root element '%s'".format(rootElementName))
     }
     val id = (dataSetXml \ "id").textOption.getOrElse("0").toInt
-    val name = (dataSetXml \ "dataSetName").textOption
-    val description = (dataSetXml \ "dataSetDescription").textOption
+    val name = (dataSetXml \ "name").textOption
+    val description = (dataSetXml \ "description").textOption
     val dataObjects = ArrayBuffer[DataObject]()
     for(d <- dataSetXml \ "dataObjects" \ "dataObject") {
       dataObjects += DataObject(d, None)
