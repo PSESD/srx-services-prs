@@ -275,9 +275,12 @@ object DistrictService extends PrsEntityService {
             " district_service.initiation_date," +
             " district_service.expiration_date," +
             " district_service.requires_personnel," +
-            " district_service_data_set.data_set_id" +
+            " district_service_data_set.data_set_id," +
+            " data_set.name data_set_name," +
+            " data_set.description data_set_description" +
             " from srx_services_prs.district_service" +
             " left join srx_services_prs.district_service_data_set on srx_services_prs.district_service_data_set.district_service_id = srx_services_prs.district_service.id" +
+            " left join srx_services_prs.data_set on srx_services_prs.data_set.id = srx_services_prs.district_service_data_set.data_set_id" +
             " left join srx_services_prs.district on srx_services_prs.district.id = srx_services_prs.district_service.district_id" +
             " left join srx_services_prs.external_service on srx_services_prs.external_service.id = srx_services_prs.district_service.external_service_id" +
             " left join srx_services_prs.authorized_entity on srx_services_prs.authorized_entity.id = srx_services_prs.external_service.authorized_entity_id"
@@ -390,7 +393,12 @@ object DistrictService extends PrsEntityService {
       val districtService = districtServices.find(ds => ds.id.equals(id))
       if (districtService.isDefined) {
         if(dataSetId.isDefined) {
-          districtService.get.dataSets.get += DataSet(dataSetId.get.toInt, None, None, None)
+          districtService.get.dataSets.get += DataSet(
+            dataSetId.get.toInt,
+            row.getString("data_set_name"),
+            row.getString("data_set_description"),
+            None
+          )
         }
       } else {
         districtServices += DistrictService(
