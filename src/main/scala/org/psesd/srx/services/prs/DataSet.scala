@@ -1,6 +1,7 @@
 package org.psesd.srx.services.prs
 
-import org.json4s.JValue
+import org.json4s._
+import org.json4s.JsonDSL._
 import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult}
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
@@ -25,7 +26,16 @@ class DataSet(
                       ) extends SrxResource with PrsEntity {
 
   def toJson: JValue = {
-    toXml.toJsonStringNoRoot.toJson
+    if(dataObjects.isDefined) {
+      ("id" -> id.toString) ~
+        ("name" -> name.orNull) ~
+        ("description" -> description.orNull) ~
+        ("dataObjects" -> dataObjects.get.map { d => d.toJson })
+    } else {
+      ("id" -> id.toString) ~
+        ("name" -> name.orNull) ~
+        ("description" -> description.orNull)
+    }
   }
 
   def toXml: Node = {

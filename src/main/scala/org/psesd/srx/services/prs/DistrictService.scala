@@ -2,7 +2,8 @@ package org.psesd.srx.services.prs
 
 import java.sql.Date
 
-import org.json4s.JValue
+import org.json4s._
+import org.json4s.JsonDSL._
 import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult}
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
@@ -63,6 +64,26 @@ class DistrictService(
 
   def toJson: JValue = {
     toXml.toJsonStringNoRoot.toJson
+    if(dataSets.isDefined) {
+      ("id" -> id.toString) ~
+        ("districtId" -> districtId.toString) ~
+        ("externalServiceId" -> externalServiceId.toString) ~
+        ("externalServiceName" -> externalServiceName.getOrElse("")) ~
+        ("authorizedEntityId" -> {if(authorizedEntityId.isDefined) authorizedEntityId.get.toString else null}) ~
+        ("initiationDate" -> initiationDate) ~
+        ("expirationDate" -> expirationDate) ~
+        ("requiresPersonnel" -> requiresPersonnel.toString) ~
+        ("dataSets" -> dataSets.get.map { d => d.toJson })
+    } else {
+      ("id" -> id.toString) ~
+        ("districtId" -> districtId.toString) ~
+        ("externalServiceId" -> externalServiceId.toString) ~
+        ("externalServiceName" -> externalServiceName.getOrElse("")) ~
+        ("authorizedEntityId" -> {if(authorizedEntityId.isDefined) authorizedEntityId.get.toString else null}) ~
+        ("initiationDate" -> initiationDate) ~
+        ("expirationDate" -> expirationDate) ~
+        ("requiresPersonnel" -> requiresPersonnel.toString)
+    }
   }
 
   def toXml: Node = {
