@@ -222,7 +222,7 @@ object Student extends PrsEntityService {
           }
           datasource.close()
           if (result.success) {
-            if (result.rows.isEmpty) {
+            if (result.rows.isEmpty && id.isDefined) {
               SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.Students.toString))
             } else {
               new StudentResult(SifRequestAction.Query, SifHttpStatusCode.Ok, result)
