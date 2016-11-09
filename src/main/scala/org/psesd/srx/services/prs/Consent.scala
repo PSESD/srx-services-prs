@@ -207,7 +207,7 @@ object Consent extends PrsEntityService {
         }
         datasource.close()
         if (result.success) {
-          if (result.rows.isEmpty) {
+          if (id.isDefined && result.rows.isEmpty) {
             SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.Consents.toString))
           } else {
             new ConsentResult(SifRequestAction.Query, SifHttpStatusCode.Ok, result)

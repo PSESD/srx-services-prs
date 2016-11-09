@@ -32,7 +32,7 @@ class District(
   def toXml: Node = {
     <district>
       <id>{id.toString}</id>
-      <districtName>{name}</districtName>
+      <name>{name}</name>
       {optional(ncesleaCode.orNull, <ncesleaCode>{ncesleaCode.orNull}</ncesleaCode>)}
       {optional(zoneId.orNull, <zoneID>{zoneId.orNull}</zoneID>)}
       {if(mainContact.isDefined && !mainContact.get.isEmpty) mainContact.get.toXml}
@@ -74,7 +74,7 @@ object District extends PrsEntityService {
       throw new ArgumentInvalidException("root element '%s'".format(rootElementName))
     }
     val id = (districtXml \ "id").textOption.getOrElse("0").toInt
-    val name = (districtXml \ "districtName").textRequired("district.districtName")
+    val name = (districtXml \ "name").textRequired("district.name")
     val ncesleaCode = (districtXml \ "ncesleaCode").textOption
     val zoneId = (districtXml \ "zoneID").textOption
     val mainContact = districtXml \ "mainContact"
@@ -218,7 +218,7 @@ object District extends PrsEntityService {
         }
         datasource.close()
         if (result.success) {
-          if (result.rows.isEmpty) {
+          if (id.isDefined && result.rows.isEmpty) {
             SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.Districts.toString))
           } else {
             new DistrictResult(SifRequestAction.Query, SifHttpStatusCode.Ok, result)

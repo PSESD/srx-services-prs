@@ -205,7 +205,7 @@ object AuthorizedEntity extends PrsEntityService {
         }
         datasource.close()
         if (result.success) {
-          if (result.rows.isEmpty) {
+          if (id.isDefined && result.rows.isEmpty) {
             SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.AuthorizedEntities.toString))
           } else {
             new AuthorizedEntityResult(SifRequestAction.Query, SifHttpStatusCode.Ok, result)

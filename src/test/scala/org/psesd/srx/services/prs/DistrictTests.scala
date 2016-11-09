@@ -52,7 +52,7 @@ class DistrictTests extends FunSuite {
     val district = District(
       <district>
         <id>{id}</id>
-        <districtName>{name}</districtName>
+        <name>{name}</name>
         <ncesleaCode>{ncesleaCode}</ncesleaCode>
         <zoneID>{zoneId}</zoneID>
         <mainContact>
@@ -75,7 +75,7 @@ class DistrictTests extends FunSuite {
     val district = District(
       <district>
         <id>{id}</id>
-        <districtName>{name}</districtName>
+        <name>{name}</name>
       </district>,
       None
     )

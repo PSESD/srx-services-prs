@@ -175,7 +175,7 @@ object DistrictServicePersonnel extends PrsEntityService {
           }
           datasource.close()
           if (result.success) {
-            if (result.rows.isEmpty) {
+            if (id.isDefined && result.rows.isEmpty) {
               SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.Personnel.toString))
             } else {
               new DistrictServicePersonnelResult(SifRequestAction.Query, SifHttpStatusCode.Ok, result)

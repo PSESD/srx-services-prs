@@ -186,7 +186,7 @@ object DataObject extends PrsEntityService {
           }
           datasource.close()
           if (result.success) {
-            if (result.rows.isEmpty) {
+            if (id.isDefined && result.rows.isEmpty) {
               SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.DataObjects.toString))
             } else {
               new DataObjectResult(SifRequestAction.Query, SifHttpStatusCode.Ok, result)

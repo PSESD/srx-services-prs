@@ -467,7 +467,7 @@ class PrsServerTests extends FunSuite {
       val response = new SifConsumer().create(sifRequest)
       printlnResponse(response)
       assert(response.statusCode.equals(SifHttpStatusCode.BadRequest))
-      assert((response.getBodyXml.get \ "description").text == "The district.districtName cannot be null, empty, or whitespace.")
+      assert((response.getBodyXml.get \ "description").text == "The district.name cannot be null, empty, or whitespace.")
     }
   }
 
