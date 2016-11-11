@@ -15,7 +15,7 @@ class AuthorizedEntityTests extends FunSuite {
     val contactName = "jon"
     val contactPhone = "555-1212"
     val mainContact = Some(new Contact(456, Some(contactName), None, None, Some(contactPhone), None, None))
-    val authorizedEntity = new AuthorizedEntity(id, name, mainContact)
+    val authorizedEntity = new AuthorizedEntity(id, name, mainContact, None)
     assert(authorizedEntity.id.equals(id))
     assert(authorizedEntity.name.equals(name))
     assert(authorizedEntity.mainContact.get.name.get.equals(contactName))

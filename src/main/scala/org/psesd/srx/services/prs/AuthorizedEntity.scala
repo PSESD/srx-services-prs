@@ -1,7 +1,9 @@
 package org.psesd.srx.services.prs
 
-import org.json4s.JValue
-import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult}
+import org.json4s._
+import org.json4s.JsonDSL._
+import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
+import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult, SrxResponseFormat}
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
@@ -20,11 +22,32 @@ import scala.xml.Node
 class AuthorizedEntity(
                         val id: Int,
                         val name: String,
-                        val mainContact: Option[Contact]
+                        val mainContact: Option[Contact],
+                        val services: Option[ArrayBuffer[ExternalService]]
                       ) extends SrxResource with PrsEntity {
 
   def toJson: JValue = {
-    toXml.toJsonStringNoRoot.toJson
+    if(services.isDefined) {
+      if(mainContact.isDefined) {
+        ("id" -> id.toString) ~
+          ("name" -> name) ~
+          ("mainContact" -> mainContact.get.toJson) ~
+          ("services" -> services.get.map { d => d.toJson })
+      } else {
+        ("id" -> id.toString) ~
+          ("name" -> name) ~
+          ("services" -> services.get.map { d => d.toJson })
+      }
+    } else {
+      if(mainContact.isDefined) {
+        ("id" -> id.toString) ~
+          ("name" -> name) ~
+          ("mainContact" -> mainContact.get.toJson)
+      } else {
+        ("id" -> id.toString) ~
+          ("name" -> name)
+      }
+    }
   }
 
   def toXml: Node = {
@@ -32,6 +55,7 @@ class AuthorizedEntity(
       <id>{id.toString}</id>
       <name>{name}</name>
       {if(mainContact.isDefined && !mainContact.get.isEmpty) mainContact.get.toXml}
+      {optional({if(services.isDefined) "true" else null}, <services>{if(services.isDefined) services.get.map(d => d.toXml)}</services>)}
     </authorizedEntity>
   }
 
@@ -43,12 +67,13 @@ class AuthorizedEntity(
   * @since 1.0
   * @author Stephen Pugmire (iTrellis, LLC)
   */
-class AuthorizedEntityResult(requestAction: SifRequestAction, httpStatusCode: Int, result: DatasourceResult) extends PrsEntityResult(
+class AuthorizedEntityResult(requestAction: SifRequestAction, httpStatusCode: Int, result: DatasourceResult, responseFormat: SrxResponseFormat) extends PrsEntityResult(
   requestAction,
   httpStatusCode,
   result,
   AuthorizedEntity.getAuthorizedEntitiesFromResult,
-    <authorizedEntities/>
+  <authorizedEntities/>,
+  responseFormat
 ) {
 }
 
@@ -59,7 +84,7 @@ class AuthorizedEntityResult(requestAction: SifRequestAction, httpStatusCode: In
   * @author Stephen Pugmire (iTrellis, LLC)
   */
 object AuthorizedEntity extends PrsEntityService {
-  def apply(id: Int, name: String, mainContact: Option[Contact]): AuthorizedEntity = new AuthorizedEntity(id, name, mainContact)
+  def apply(id: Int, name: String, mainContact: Option[Contact]): AuthorizedEntity = new AuthorizedEntity(id, name, mainContact, None)
 
   def apply(authorizedEntityXml: Node, parameters: Option[List[SifRequestParameter]]): AuthorizedEntity = {
     if (authorizedEntityXml == null) {
@@ -80,7 +105,8 @@ object AuthorizedEntity extends PrsEntityService {
         } else {
           None
         }
-      }
+      },
+      None
     )
   }
 
@@ -137,7 +163,23 @@ object AuthorizedEntity extends PrsEntityService {
       datasource.close()
 
       if (result.success) {
-        new AuthorizedEntityResult(SifRequestAction.Create, SifRequestAction.getSuccessStatusCode(SifRequestAction.Create), result)
+        val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
+        if(responseFormat.equals(SrxResponseFormat.Object)) {
+          val queryResult = executeQuery(Some(result.id.get.toInt))
+          new AuthorizedEntityResult(
+            SifRequestAction.Create,
+            SifRequestAction.getSuccessStatusCode(SifRequestAction.Create),
+            queryResult,
+            responseFormat
+          )
+        } else {
+          new AuthorizedEntityResult(
+            SifRequestAction.Create,
+            SifRequestAction.getSuccessStatusCode(SifRequestAction.Create),
+            result,
+            responseFormat
+          )
+        }
       } else {
         throw result.exceptions.head
       }
@@ -167,7 +209,12 @@ object AuthorizedEntity extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          val aeResult = new AuthorizedEntityResult(SifRequestAction.Delete, SifRequestAction.getSuccessStatusCode(SifRequestAction.Delete), result)
+          val aeResult = new AuthorizedEntityResult(
+            SifRequestAction.Delete,
+            SifRequestAction.getSuccessStatusCode(SifRequestAction.Delete),
+            result,
+            SrxResponseFormat.getResponseFormat(parameters)
+          )
           aeResult.setId(id.get)
           aeResult
         } else {
@@ -186,29 +233,17 @@ object AuthorizedEntity extends PrsEntityService {
       SrxResourceErrorResult(SifHttpStatusCode.BadRequest, new ArgumentInvalidException("id parameter"))
     } else {
       try {
-        val selectFrom = "select srx_services_prs.authorized_entity.*, " +
-          "srx_services_prs.contact.name main_contact_name, " +
-          "srx_services_prs.contact.title main_contact_title, " +
-          "srx_services_prs.contact.email main_contact_email, " +
-          "srx_services_prs.contact.phone main_contact_phone, " +
-          "srx_services_prs.contact.mailing_address main_contact_mailing_address, " +
-          "srx_services_prs.contact.web_address main_contact_web_address " +
-          "from srx_services_prs.authorized_entity " +
-          "join srx_services_prs.contact on srx_services_prs.contact.id = srx_services_prs.authorized_entity.main_contact_id "
-        val datasource = new Datasource(datasourceConfig)
-        val result = {
-          if (id.isEmpty) {
-            datasource.get(selectFrom + "order by srx_services_prs.authorized_entity.id;")
-          } else {
-            datasource.get(selectFrom + "where srx_services_prs.authorized_entity.id = ?;", id.get)
-          }
-        }
-        datasource.close()
+        val result = executeQuery(id)
         if (result.success) {
           if (id.isDefined && result.rows.isEmpty) {
             SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.AuthorizedEntities.toString))
           } else {
-            new AuthorizedEntityResult(SifRequestAction.Query, SifHttpStatusCode.Ok, result)
+            new AuthorizedEntityResult(
+              SifRequestAction.Query,
+              SifHttpStatusCode.Ok,
+              result,
+              SrxResponseFormat.getResponseFormat(parameters)
+            )
           }
         } else {
           throw result.exceptions.head
@@ -218,6 +253,35 @@ object AuthorizedEntity extends PrsEntityService {
           SrxResourceErrorResult(SifHttpStatusCode.InternalServerError, e)
       }
     }
+  }
+
+  def executeQuery(id: Option[Int]): DatasourceResult = {
+    val selectFrom = "select srx_services_prs.authorized_entity.id, " +
+      "srx_services_prs.authorized_entity.name, " +
+      "srx_services_prs.contact.id main_contact_id, " +
+      "srx_services_prs.contact.name main_contact_name, " +
+      "srx_services_prs.contact.title main_contact_title, " +
+      "srx_services_prs.contact.email main_contact_email, " +
+      "srx_services_prs.contact.phone main_contact_phone, " +
+      "srx_services_prs.contact.mailing_address main_contact_mailing_address, " +
+      "srx_services_prs.contact.web_address main_contact_web_address, " +
+      "srx_services_prs.external_service.id external_service_id, " +
+      "srx_services_prs.external_service.name external_service_name, " +
+      "srx_services_prs.external_service.description external_service_description " +
+      "from srx_services_prs.authorized_entity " +
+      "left join srx_services_prs.contact on srx_services_prs.contact.id = srx_services_prs.authorized_entity.main_contact_id " +
+      "left join srx_services_prs.external_service on srx_services_prs.external_service.authorized_entity_id = srx_services_prs.authorized_entity.id "
+    val datasource = new Datasource(datasourceConfig)
+    val result = {
+      if (id.isEmpty) {
+        datasource.get(selectFrom + "order by srx_services_prs.authorized_entity.id;")
+      } else {
+        val test = selectFrom + "where srx_services_prs.authorized_entity.id = ?;"
+        datasource.get(selectFrom + "where srx_services_prs.authorized_entity.id = ?;", id.get)
+      }
+    }
+    datasource.close()
+    result
   }
 
   def update(resource: SrxResource, parameters: List[SifRequestParameter]): SrxResourceResult = {
@@ -273,7 +337,24 @@ object AuthorizedEntity extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          val aeResult = new AuthorizedEntityResult(SifRequestAction.Update, SifRequestAction.getSuccessStatusCode(SifRequestAction.Update), result)
+          val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
+          var aeResult: AuthorizedEntityResult = null
+          if(responseFormat.equals(SrxResponseFormat.Object)) {
+            val queryResult = executeQuery(Some(id.get))
+            aeResult = new AuthorizedEntityResult(
+              SifRequestAction.Update,
+              SifRequestAction.getSuccessStatusCode(SifRequestAction.Update),
+              queryResult,
+              responseFormat
+            )
+          } else {
+            aeResult = new AuthorizedEntityResult(
+              SifRequestAction.Update,
+              SifRequestAction.getSuccessStatusCode(SifRequestAction.Update),
+              result,
+              responseFormat
+            )
+          }
           aeResult.setId(id.get)
           aeResult
         } else {
@@ -289,26 +370,51 @@ object AuthorizedEntity extends PrsEntityService {
   def getAuthorizedEntitiesFromResult(result: DatasourceResult): List[AuthorizedEntity] = {
     val authorizedEntities = ArrayBuffer[AuthorizedEntity]()
     for (row <- result.rows) {
+      val id = row.getString("id").getOrElse("").toInt
       val mainContactId = row.getString("main_contact_id")
-      val authorizedEntity = AuthorizedEntity(
-        row.getString("id").getOrElse("").toInt,
-        row.getString("name").getOrElse(""), {
-          if (mainContactId.isDefined) {
-            Some(Contact(
-              mainContactId.get.toInt,
-              row.getString("main_contact_name"),
-              row.getString("main_contact_title"),
-              row.getString("main_contact_email"),
-              row.getString("main_contact_phone"),
-              row.getString("main_contact_mailing_address"),
-              row.getString("main_contact_web_address")
-            ))
-          } else {
-            None
-          }
+      val externalServiceId = row.getString("external_service_id")
+      val authorizedEntity = authorizedEntities.find(ae => ae.id.equals(id))
+      if (authorizedEntity.isDefined) {
+        if (externalServiceId.isDefined) {
+          authorizedEntity.get.services.get += ExternalService(
+            externalServiceId.get.toInt,
+            id,
+            row.getString("external_service_name"),
+            row.getString("external_service_description")
+          )
         }
-      )
-      authorizedEntities += authorizedEntity
+      } else {
+        authorizedEntities += new AuthorizedEntity(
+          id,
+          row.getString("name").getOrElse(""),
+          {
+            if (mainContactId.isDefined) {
+              Some(Contact(
+                mainContactId.get.toInt,
+                row.getString("main_contact_name"),
+                row.getString("main_contact_title"),
+                row.getString("main_contact_email"),
+                row.getString("main_contact_phone"),
+                row.getString("main_contact_mailing_address"),
+                row.getString("main_contact_web_address")
+              ))
+            } else {
+              None
+            }
+          },
+          {
+            if(externalServiceId.isDefined)
+              Some(ArrayBuffer[ExternalService](ExternalService(
+                externalServiceId.get.toInt,
+                id,
+                row.getString("external_service_name"),
+                row.getString("external_service_description")
+              )))
+            else
+              Some(ArrayBuffer[ExternalService]())
+          }
+        )
+      }
     }
     authorizedEntities.toList
   }

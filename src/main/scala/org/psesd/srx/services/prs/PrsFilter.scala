@@ -5,7 +5,8 @@ import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentN
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
 import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestAction, SifRequestParameter}
-import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult}
+import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
+import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult, SrxResponseFormat}
 import org.psesd.srx.shared.data.{Datasource, DatasourceResult}
 
 import scala.collection.concurrent.TrieMap
@@ -37,14 +38,15 @@ class PrsFilter(node: Node) extends SrxResource with PrsEntity {
   * @since 1.0
   * @author Stephen Pugmire (iTrellis, LLC)
   */
-class PrsFilterResult(requestAction: SifRequestAction, httpStatusCode: Int, result: DatasourceResult) extends PrsEntityResult(
+class PrsFilterResult(requestAction: SifRequestAction, httpStatusCode: Int, result: DatasourceResult, responseFormat: SrxResponseFormat) extends PrsEntityResult(
   requestAction,
   httpStatusCode,
   result,
   PrsFilter.getFilterFromResult,
   <xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
     <xsl:output method="xml" encoding="UTF-8" standalone="yes"/>
-  </xsl:stylesheet>
+  </xsl:stylesheet>,
+  responseFormat
 ) {
 }
 
@@ -138,7 +140,12 @@ object PrsFilter extends PrsEntityService {
         )
         datasource.close()
         if (result.success) {
-          new PrsFilterResult(SifRequestAction.Query, SifHttpStatusCode.Ok, result)
+          new PrsFilterResult(
+            SifRequestAction.Query,
+            SifHttpStatusCode.Ok,
+            result,
+            SrxResponseFormat.getResponseFormat(parameters)
+          )
         } else {
           throw result.exceptions.head
         }

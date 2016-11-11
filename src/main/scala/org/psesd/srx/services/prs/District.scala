@@ -1,7 +1,8 @@
 package org.psesd.srx.services.prs
 
 import org.json4s.JValue
-import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult}
+import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
+import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult, SrxResponseFormat}
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
@@ -47,12 +48,13 @@ class District(
   * @since 1.0
   * @author Stephen Pugmire (iTrellis, LLC)
   */
-class DistrictResult(requestAction: SifRequestAction, httpStatusCode: Int, result: DatasourceResult) extends PrsEntityResult(
+class DistrictResult(requestAction: SifRequestAction, httpStatusCode: Int, result: DatasourceResult, responseFormat: SrxResponseFormat) extends PrsEntityResult(
   requestAction,
   httpStatusCode,
   result,
   District.getDistrictsFromResult,
-    <districts/>
+  <districts/>,
+  responseFormat
 ) {
 }
 
@@ -150,7 +152,23 @@ object District extends PrsEntityService {
       datasource.close()
 
       if (result.success) {
-        new DistrictResult(SifRequestAction.Create, SifRequestAction.getSuccessStatusCode(SifRequestAction.Create), result)
+        val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
+        if(responseFormat.equals(SrxResponseFormat.Object)) {
+          val queryResult = executeQuery(Some(result.id.get.toInt))
+          new DistrictResult(
+            SifRequestAction.Create,
+            SifRequestAction.getSuccessStatusCode(SifRequestAction.Create),
+            queryResult,
+            responseFormat
+          )
+        } else {
+          new DistrictResult(
+            SifRequestAction.Create,
+            SifRequestAction.getSuccessStatusCode(SifRequestAction.Create),
+            result,
+            responseFormat
+          )
+        }
       } else {
         throw result.exceptions.head
       }
@@ -180,7 +198,12 @@ object District extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          val aeResult = new DistrictResult(SifRequestAction.Delete, SifRequestAction.getSuccessStatusCode(SifRequestAction.Delete), result)
+          val aeResult = new DistrictResult(
+            SifRequestAction.Delete,
+            SifRequestAction.getSuccessStatusCode(SifRequestAction.Delete),
+            result,
+            SrxResponseFormat.getResponseFormat(parameters)
+          )
           aeResult.setId(id.get)
           aeResult
         } else {
@@ -199,29 +222,17 @@ object District extends PrsEntityService {
       SrxResourceErrorResult(SifHttpStatusCode.BadRequest, new ArgumentInvalidException("id parameter"))
     } else {
       try {
-        val selectFrom = "select srx_services_prs.district.*, " +
-          "srx_services_prs.contact.name main_contact_name, " +
-          "srx_services_prs.contact.title main_contact_title, " +
-          "srx_services_prs.contact.email main_contact_email, " +
-          "srx_services_prs.contact.phone main_contact_phone, " +
-          "srx_services_prs.contact.mailing_address main_contact_mailing_address, " +
-          "srx_services_prs.contact.web_address main_contact_web_address " +
-          "from srx_services_prs.district " +
-          "join srx_services_prs.contact on srx_services_prs.contact.id = srx_services_prs.district.main_contact_id "
-        val datasource = new Datasource(datasourceConfig)
-        val result = {
-          if (id.isEmpty) {
-            datasource.get(selectFrom + "order by srx_services_prs.district.id;")
-          } else {
-            datasource.get(selectFrom + "where srx_services_prs.district.id = ?;", id.get)
-          }
-        }
-        datasource.close()
+        val result = executeQuery(id)
         if (result.success) {
           if (id.isDefined && result.rows.isEmpty) {
             SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.Districts.toString))
           } else {
-            new DistrictResult(SifRequestAction.Query, SifHttpStatusCode.Ok, result)
+            new DistrictResult(
+              SifRequestAction.Query,
+              SifHttpStatusCode.Ok,
+              result,
+              SrxResponseFormat.getResponseFormat(parameters)
+            )
           }
         } else {
           throw result.exceptions.head
@@ -231,6 +242,28 @@ object District extends PrsEntityService {
           SrxResourceErrorResult(SifHttpStatusCode.InternalServerError, e)
       }
     }
+  }
+
+  private def executeQuery(id: Option[Int]): DatasourceResult = {
+    val selectFrom = "select srx_services_prs.district.*, " +
+      "srx_services_prs.contact.name main_contact_name, " +
+      "srx_services_prs.contact.title main_contact_title, " +
+      "srx_services_prs.contact.email main_contact_email, " +
+      "srx_services_prs.contact.phone main_contact_phone, " +
+      "srx_services_prs.contact.mailing_address main_contact_mailing_address, " +
+      "srx_services_prs.contact.web_address main_contact_web_address " +
+      "from srx_services_prs.district " +
+      "join srx_services_prs.contact on srx_services_prs.contact.id = srx_services_prs.district.main_contact_id "
+    val datasource = new Datasource(datasourceConfig)
+    val result = {
+      if (id.isEmpty) {
+        datasource.get(selectFrom + "order by srx_services_prs.district.id;")
+      } else {
+        datasource.get(selectFrom + "where srx_services_prs.district.id = ?;", id.get)
+      }
+    }
+    datasource.close()
+    result
   }
 
   def update(resource: SrxResource, parameters: List[SifRequestParameter]): SrxResourceResult = {
@@ -294,9 +327,26 @@ object District extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          val aeResult = new DistrictResult(SifRequestAction.Update, SifRequestAction.getSuccessStatusCode(SifRequestAction.Update), result)
-          aeResult.setId(id.get)
-          aeResult
+          val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
+          var dResult: DistrictResult = null
+          if(responseFormat.equals(SrxResponseFormat.Object)) {
+            val queryResult = executeQuery(Some(id.get))
+            dResult = new DistrictResult(
+              SifRequestAction.Update,
+              SifRequestAction.getSuccessStatusCode(SifRequestAction.Update),
+              queryResult,
+              responseFormat
+            )
+          } else {
+            dResult = new DistrictResult(
+              SifRequestAction.Update,
+              SifRequestAction.getSuccessStatusCode(SifRequestAction.Update),
+              result,
+              responseFormat
+            )
+          }
+          dResult.setId(id.get)
+          dResult
         } else {
           throw result.exceptions.head
         }

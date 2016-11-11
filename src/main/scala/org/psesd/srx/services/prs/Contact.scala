@@ -1,5 +1,6 @@
 package org.psesd.srx.services.prs
 
+import org.json4s._
 import org.psesd.srx.shared.core.SrxResource
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 
@@ -27,6 +28,10 @@ class Contact(
     phone.isEmpty &&
     mailingAddress.isEmpty &&
     webAddress.isEmpty
+  }
+
+  def toJson: JValue = {
+    toXml.toJsonStringNoRoot.toJson
   }
 
   def toXml: Node = {

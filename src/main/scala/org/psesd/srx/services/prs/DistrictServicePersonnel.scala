@@ -1,7 +1,8 @@
 package org.psesd.srx.services.prs
 
 import org.json4s.JValue
-import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult}
+import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
+import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult, SrxResponseFormat}
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
@@ -45,12 +46,13 @@ class DistrictServicePersonnel(
   * @since 1.0
   * @author Stephen Pugmire (iTrellis, LLC)
   */
-class DistrictServicePersonnelResult(requestAction: SifRequestAction, httpStatusCode: Int, result: DatasourceResult) extends PrsEntityResult(
+class DistrictServicePersonnelResult(requestAction: SifRequestAction, httpStatusCode: Int, result: DatasourceResult, responseFormat: SrxResponseFormat) extends PrsEntityResult(
   requestAction,
   httpStatusCode,
   result,
   DistrictServicePersonnel.getDistrictServicePersonnelFromResult,
-    <districtServicePersonnels/>
+  <districtServicePersonnels/>,
+  responseFormat
 ) {
 }
 
@@ -114,7 +116,23 @@ object DistrictServicePersonnel extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          new DistrictServicePersonnelResult(SifRequestAction.Create, SifRequestAction.getSuccessStatusCode(SifRequestAction.Create), result)
+          val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
+          if(responseFormat.equals(SrxResponseFormat.Object)) {
+            val queryResult = executeQuery(Some(result.id.get.toInt), None)
+            new DistrictServicePersonnelResult(
+              SifRequestAction.Create,
+              SifRequestAction.getSuccessStatusCode(SifRequestAction.Create),
+              queryResult,
+              responseFormat
+            )
+          } else {
+            new DistrictServicePersonnelResult(
+              SifRequestAction.Create,
+              SifRequestAction.getSuccessStatusCode(SifRequestAction.Create),
+              result,
+              responseFormat
+            )
+          }
         } else {
           throw result.exceptions.head
         }
@@ -141,7 +159,12 @@ object DistrictServicePersonnel extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          val dsResult = new DistrictServicePersonnelResult(SifRequestAction.Delete, SifRequestAction.getSuccessStatusCode(SifRequestAction.Delete), result)
+          val dsResult = new DistrictServicePersonnelResult(
+            SifRequestAction.Delete,
+            SifRequestAction.getSuccessStatusCode(SifRequestAction.Delete),
+            result,
+            SrxResponseFormat.getResponseFormat(parameters)
+          )
           dsResult.setId(id.get)
           dsResult
         } else {
@@ -164,21 +187,17 @@ object DistrictServicePersonnel extends PrsEntityService {
         SrxResourceErrorResult(SifHttpStatusCode.BadRequest, new ArgumentInvalidException("districtServiceId parameter"))
       } else {
         try {
-          val selectFrom = "select * from srx_services_prs.district_service_personnel"
-          val datasource = new Datasource(datasourceConfig)
-          val result = {
-            if (id.isEmpty) {
-              datasource.get(selectFrom + " where district_service_id = ? order by id;", districtServiceIdParam.get.value.toInt)
-            } else {
-              datasource.get(selectFrom + " where id = ?;", id.get)
-            }
-          }
-          datasource.close()
+          val result = executeQuery(id, districtServiceIdParam)
           if (result.success) {
             if (id.isDefined && result.rows.isEmpty) {
               SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.Personnel.toString))
             } else {
-              new DistrictServicePersonnelResult(SifRequestAction.Query, SifHttpStatusCode.Ok, result)
+              new DistrictServicePersonnelResult(
+                SifRequestAction.Query,
+                SifHttpStatusCode.Ok,
+                result,
+                SrxResponseFormat.getResponseFormat(parameters)
+              )
             }
           } else {
             throw result.exceptions.head
@@ -189,6 +208,20 @@ object DistrictServicePersonnel extends PrsEntityService {
         }
       }
     }
+  }
+
+  private def executeQuery(id: Option[Int], districtServiceIdParam: Option[SifRequestParameter]): DatasourceResult = {
+    val selectFrom = "select * from srx_services_prs.district_service_personnel"
+    val datasource = new Datasource(datasourceConfig)
+    val result = {
+      if (id.isEmpty) {
+        datasource.get(selectFrom + " where district_service_id = ? order by id;", districtServiceIdParam.get.value.toInt)
+      } else {
+        datasource.get(selectFrom + " where id = ?;", id.get)
+      }
+    }
+    datasource.close()
+    result
   }
 
   def update(resource: SrxResource, parameters: List[SifRequestParameter]): SrxResourceResult = {
@@ -229,9 +262,26 @@ object DistrictServicePersonnel extends PrsEntityService {
           datasource.close()
 
           if (result.success) {
-            val aeResult = new DistrictServicePersonnelResult(SifRequestAction.Update, SifRequestAction.getSuccessStatusCode(SifRequestAction.Update), result)
-            aeResult.setId(id.get)
-            aeResult
+            val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
+            var dspResult: DistrictServicePersonnelResult = null
+            if(responseFormat.equals(SrxResponseFormat.Object)) {
+              val queryResult = executeQuery(Some(id.get), None)
+              dspResult = new DistrictServicePersonnelResult(
+                SifRequestAction.Update,
+                SifRequestAction.getSuccessStatusCode(SifRequestAction.Update),
+                queryResult,
+                responseFormat
+              )
+            } else {
+              dspResult = new DistrictServicePersonnelResult(
+                SifRequestAction.Update,
+                SifRequestAction.getSuccessStatusCode(SifRequestAction.Update),
+                result,
+                responseFormat
+              )
+            }
+            dspResult.setId(id.get)
+            dspResult
           } else {
             throw result.exceptions.head
           }

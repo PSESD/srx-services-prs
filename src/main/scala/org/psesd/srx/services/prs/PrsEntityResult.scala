@@ -1,7 +1,8 @@
 package org.psesd.srx.services.prs
 
 import org.json4s._
-import org.psesd.srx.shared.core.SrxResourceResult
+import org.psesd.srx.shared.core.{SrxResourceResult, SrxResponseFormat}
+import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
 import org.psesd.srx.shared.core.exceptions.ArgumentNullException
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction.SifRequestAction
@@ -21,7 +22,8 @@ class PrsEntityResult(
                        httpStatusCode: Int,
                        result: DatasourceResult,
                        queryService: (DatasourceResult) => List[PrsEntity],
-                       queryRootNode: Node
+                       queryRootNode: Node,
+                       responseFormat: SrxResponseFormat
                      ) extends SrxResourceResult {
   if (requestAction == null) {
     throw new ArgumentNullException("request action")
@@ -39,7 +41,11 @@ class PrsEntityResult(
     requestAction match {
 
       case SifRequestAction.Create =>
-        Option(SifCreateResponse().addResult(getId.toString, statusCode).toXml.toJsonString.toJson)
+        if(responseFormat.equals(SrxResponseFormat.Object) && statusCode.equals(SifHttpStatusCode.Created)) {
+          Some(queryService(result).head.toJson)
+        } else {
+          Option(SifCreateResponse().addResult(getId.toString, statusCode).toXml.toJsonString.toJson)
+        }
 
       case SifRequestAction.Delete =>
         Option(SifDeleteResponse().addResult(getId.toString, statusCode).toXml.toJsonString.toJson)
@@ -59,7 +65,11 @@ class PrsEntityResult(
         }
 
       case SifRequestAction.Update =>
-        Option(SifUpdateResponse().addResult(getId.toString, statusCode).toXml.toJsonString.toJson)
+        if(responseFormat.equals(SrxResponseFormat.Object) && statusCode.equals(SifHttpStatusCode.Ok)) {
+          Some(queryService(result).head.toJson)
+        } else {
+          Option(SifUpdateResponse().addResult(getId.toString, statusCode).toXml.toJsonString.toJson)
+        }
 
       case _ =>
         None
@@ -83,7 +93,11 @@ class PrsEntityResult(
     requestAction match {
 
       case SifRequestAction.Create =>
-        Option(SifCreateResponse().addResult(getId.toString, statusCode).toXml)
+        if(responseFormat.equals(SrxResponseFormat.Object) && statusCode.equals(SifHttpStatusCode.Created)) {
+          Some(queryService(result).head.toXml)
+        } else {
+          Option(SifCreateResponse().addResult(getId.toString, statusCode).toXml)
+        }
 
       case SifRequestAction.Delete =>
         Option(SifDeleteResponse().addResult(getId.toString, statusCode).toXml)
@@ -100,7 +114,11 @@ class PrsEntityResult(
         }
 
       case SifRequestAction.Update =>
-        Option(SifUpdateResponse().addResult(getId.toString, statusCode).toXml)
+        if(responseFormat.equals(SrxResponseFormat.Object) && statusCode.equals(SifHttpStatusCode.Ok)) {
+          Some(queryService(result).head.toXml)
+        } else {
+          Option(SifUpdateResponse().addResult(getId.toString, statusCode).toXml)
+        }
 
       case _ =>
         None

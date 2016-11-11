@@ -1,7 +1,8 @@
 package org.psesd.srx.services.prs
 
 import org.json4s.JValue
-import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult}
+import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
+import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult, SrxResponseFormat}
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
@@ -45,12 +46,13 @@ class Personnel(
   * @since 1.0
   * @author Stephen Pugmire (iTrellis, LLC)
   */
-class PersonnelResult(requestAction: SifRequestAction, httpStatusCode: Int, result: DatasourceResult) extends PrsEntityResult(
+class PersonnelResult(requestAction: SifRequestAction, httpStatusCode: Int, result: DatasourceResult, responseFormat: SrxResponseFormat) extends PrsEntityResult(
   requestAction,
   httpStatusCode,
   result,
   Personnel.getPersonnelFromResult,
-    <personnels/>
+  <personnels/>,
+  responseFormat
 ) {
 }
 
@@ -117,7 +119,23 @@ object Personnel extends PrsEntityService {
       datasource.close()
 
       if (result.success) {
-        new PersonnelResult(SifRequestAction.Create, SifRequestAction.getSuccessStatusCode(SifRequestAction.Create), result)
+        val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
+        if(responseFormat.equals(SrxResponseFormat.Object)) {
+          val queryResult = executeQuery(Some(result.id.get.toInt), None)
+          new PersonnelResult(
+            SifRequestAction.Create,
+            SifRequestAction.getSuccessStatusCode(SifRequestAction.Create),
+            queryResult,
+            responseFormat
+          )
+        } else {
+          new PersonnelResult(
+            SifRequestAction.Create,
+            SifRequestAction.getSuccessStatusCode(SifRequestAction.Create),
+            result,
+            responseFormat
+          )
+        }
       } else {
         throw result.exceptions.head
       }
@@ -143,7 +161,12 @@ object Personnel extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          val pResult = new PersonnelResult(SifRequestAction.Delete, SifRequestAction.getSuccessStatusCode(SifRequestAction.Delete), result)
+          val pResult = new PersonnelResult(
+            SifRequestAction.Delete,
+            SifRequestAction.getSuccessStatusCode(SifRequestAction.Delete),
+            result,
+            SrxResponseFormat.getResponseFormat(parameters)
+          )
           pResult.setId(id.get)
           pResult
         } else {
@@ -166,21 +189,17 @@ object Personnel extends PrsEntityService {
         SrxResourceErrorResult(SifHttpStatusCode.BadRequest, new ArgumentInvalidException("authorizedEntityId parameter"))
       } else {
         try {
-          val selectFrom = "select srx_services_prs.personnel.* from srx_services_prs.personnel"
-          val datasource = new Datasource(datasourceConfig)
-          val result = {
-            if (id.isEmpty) {
-              datasource.get(selectFrom + " where srx_services_prs.personnel.authorized_entity_id = ? order by srx_services_prs.personnel.id;", authorizedEntityIdParam.get.value.toInt)
-            } else {
-              datasource.get(selectFrom + " where srx_services_prs.personnel.id = ?;", id.get)
-            }
-          }
-          datasource.close()
+          val result = executeQuery(id, authorizedEntityIdParam)
           if (result.success) {
             if (id.isDefined && result.rows.isEmpty) {
               SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.Personnel.toString))
             } else {
-              new PersonnelResult(SifRequestAction.Query, SifHttpStatusCode.Ok, result)
+              new PersonnelResult(
+                SifRequestAction.Query,
+                SifHttpStatusCode.Ok,
+                result,
+                SrxResponseFormat.getResponseFormat(parameters)
+              )
             }
           } else {
             throw result.exceptions.head
@@ -191,6 +210,20 @@ object Personnel extends PrsEntityService {
         }
       }
     }
+  }
+
+  private def executeQuery(id: Option[Int], authorizedEntityIdParam: Option[SifRequestParameter]): DatasourceResult = {
+    val selectFrom = "select srx_services_prs.personnel.* from srx_services_prs.personnel"
+    val datasource = new Datasource(datasourceConfig)
+    val result = {
+      if (id.isEmpty) {
+        datasource.get(selectFrom + " where srx_services_prs.personnel.authorized_entity_id = ? order by srx_services_prs.personnel.id;", authorizedEntityIdParam.get.value.toInt)
+      } else {
+        datasource.get(selectFrom + " where srx_services_prs.personnel.id = ?;", id.get)
+      }
+    }
+    datasource.close()
+    result
   }
 
   def update(resource: SrxResource, parameters: List[SifRequestParameter]): SrxResourceResult = {
@@ -224,7 +257,24 @@ object Personnel extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          val pResult = new PersonnelResult(SifRequestAction.Update, SifRequestAction.getSuccessStatusCode(SifRequestAction.Update), result)
+          val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
+          var pResult: PersonnelResult = null
+          if(responseFormat.equals(SrxResponseFormat.Object)) {
+            val queryResult = executeQuery(Some(id.get), None)
+            pResult = new PersonnelResult(
+              SifRequestAction.Update,
+              SifRequestAction.getSuccessStatusCode(SifRequestAction.Update),
+              queryResult,
+              responseFormat
+            )
+          } else {
+            pResult = new PersonnelResult(
+              SifRequestAction.Update,
+              SifRequestAction.getSuccessStatusCode(SifRequestAction.Update),
+              result,
+              responseFormat
+            )
+          }
           pResult.setId(id.get)
           pResult
         } else {

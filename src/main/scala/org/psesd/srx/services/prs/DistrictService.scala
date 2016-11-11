@@ -4,7 +4,8 @@ import java.sql.Date
 
 import org.json4s._
 import org.json4s.JsonDSL._
-import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult}
+import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
+import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult, SrxResponseFormat}
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
@@ -109,12 +110,13 @@ class DistrictService(
   * @since 1.0
   * @author Stephen Pugmire (iTrellis, LLC)
   */
-class DistrictServiceResult(requestAction: SifRequestAction, httpStatusCode: Int, result: DatasourceResult) extends PrsEntityResult(
+class DistrictServiceResult(requestAction: SifRequestAction, httpStatusCode: Int, result: DatasourceResult, responseFormat: SrxResponseFormat) extends PrsEntityResult(
   requestAction,
   httpStatusCode,
   result,
   DistrictService.getDistrictServicesFromResult,
-    <districtServices/>
+  <districtServices/>,
+  responseFormat
 ) {
 }
 
@@ -233,7 +235,23 @@ object DistrictService extends PrsEntityService {
       datasource.close()
 
       if (result.success) {
-        new DistrictServiceResult(SifRequestAction.Create, SifRequestAction.getSuccessStatusCode(SifRequestAction.Create), result)
+        val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
+        if(responseFormat.equals(SrxResponseFormat.Object)) {
+          val queryResult = executeQuery(Some(result.id.get.toInt), None)
+          new DistrictServiceResult(
+            SifRequestAction.Create,
+            SifRequestAction.getSuccessStatusCode(SifRequestAction.Create),
+            queryResult,
+            responseFormat
+          )
+        } else {
+          new DistrictServiceResult(
+            SifRequestAction.Create,
+            SifRequestAction.getSuccessStatusCode(SifRequestAction.Create),
+            result,
+            responseFormat
+          )
+        }
       } else {
         throw result.exceptions.head
       }
@@ -264,7 +282,12 @@ object DistrictService extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          val dsResult = new DistrictServiceResult(SifRequestAction.Delete, SifRequestAction.getSuccessStatusCode(SifRequestAction.Delete), result)
+          val dsResult = new DistrictServiceResult(
+            SifRequestAction.Delete,
+            SifRequestAction.getSuccessStatusCode(SifRequestAction.Delete),
+            result,
+            SrxResponseFormat.getResponseFormat(parameters)
+          )
           dsResult.setId(id.get)
           dsResult
         } else {
@@ -287,38 +310,17 @@ object DistrictService extends PrsEntityService {
         SrxResourceErrorResult(SifHttpStatusCode.BadRequest, new ArgumentInvalidException("districtId parameter"))
       } else {
         try {
-          val selectFrom = "select district_service.id," +
-            " district_service.district_id," +
-            " district_service.external_service_id," +
-            " external_service.name external_service_name," +
-            " external_service.authorized_entity_id," +
-            " authorized_entity.name authorized_entity_name," +
-            " district_service.initiation_date," +
-            " district_service.expiration_date," +
-            " district_service.requires_personnel," +
-            " district_service_data_set.data_set_id," +
-            " data_set.name data_set_name," +
-            " data_set.description data_set_description" +
-            " from srx_services_prs.district_service" +
-            " left join srx_services_prs.district_service_data_set on srx_services_prs.district_service_data_set.district_service_id = srx_services_prs.district_service.id" +
-            " left join srx_services_prs.data_set on srx_services_prs.data_set.id = srx_services_prs.district_service_data_set.data_set_id" +
-            " left join srx_services_prs.district on srx_services_prs.district.id = srx_services_prs.district_service.district_id" +
-            " left join srx_services_prs.external_service on srx_services_prs.external_service.id = srx_services_prs.district_service.external_service_id" +
-            " left join srx_services_prs.authorized_entity on srx_services_prs.authorized_entity.id = srx_services_prs.external_service.authorized_entity_id"
-          val datasource = new Datasource(datasourceConfig)
-          val result = {
-            if (id.isEmpty) {
-              datasource.get(selectFrom + " where srx_services_prs.district_service.district_id = ? order by srx_services_prs.district_service.id;", districtIdParam.get.value.toInt)
-            } else {
-              datasource.get(selectFrom + " where srx_services_prs.district_service.id = ?;", id.get)
-            }
-          }
-          datasource.close()
+          val result = executeQuery(id, districtIdParam)
           if (result.success) {
             if (id.isDefined && result.rows.isEmpty) {
               SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.ExternalServices.toString))
             } else {
-              new DistrictServiceResult(SifRequestAction.Query, SifHttpStatusCode.Ok, result)
+              new DistrictServiceResult(
+                SifRequestAction.Query,
+                SifHttpStatusCode.Ok,
+                result,
+                SrxResponseFormat.getResponseFormat(parameters)
+              )
             }
           } else {
             throw result.exceptions.head
@@ -329,6 +331,37 @@ object DistrictService extends PrsEntityService {
         }
       }
     }
+  }
+
+  private def executeQuery(id: Option[Int], districtIdParam: Option[SifRequestParameter]): DatasourceResult = {
+    val selectFrom = "select district_service.id," +
+      " district_service.district_id," +
+      " district_service.external_service_id," +
+      " external_service.name external_service_name," +
+      " external_service.authorized_entity_id," +
+      " authorized_entity.name authorized_entity_name," +
+      " district_service.initiation_date," +
+      " district_service.expiration_date," +
+      " district_service.requires_personnel," +
+      " district_service_data_set.data_set_id," +
+      " data_set.name data_set_name," +
+      " data_set.description data_set_description" +
+      " from srx_services_prs.district_service" +
+      " left join srx_services_prs.district_service_data_set on srx_services_prs.district_service_data_set.district_service_id = srx_services_prs.district_service.id" +
+      " left join srx_services_prs.data_set on srx_services_prs.data_set.id = srx_services_prs.district_service_data_set.data_set_id" +
+      " left join srx_services_prs.district on srx_services_prs.district.id = srx_services_prs.district_service.district_id" +
+      " left join srx_services_prs.external_service on srx_services_prs.external_service.id = srx_services_prs.district_service.external_service_id" +
+      " left join srx_services_prs.authorized_entity on srx_services_prs.authorized_entity.id = srx_services_prs.external_service.authorized_entity_id"
+    val datasource = new Datasource(datasourceConfig)
+    val result = {
+      if (id.isEmpty) {
+        datasource.get(selectFrom + " where srx_services_prs.district_service.district_id = ? order by srx_services_prs.district_service.id;", districtIdParam.get.value.toInt)
+      } else {
+        datasource.get(selectFrom + " where srx_services_prs.district_service.id = ?;", id.get)
+      }
+    }
+    datasource.close()
+    result
   }
 
   def update(resource: SrxResource, parameters: List[SifRequestParameter]): SrxResourceResult = {
@@ -393,9 +426,26 @@ object DistrictService extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          val aeResult = new DistrictServiceResult(SifRequestAction.Update, SifRequestAction.getSuccessStatusCode(SifRequestAction.Update), result)
-          aeResult.setId(id.get)
-          aeResult
+          val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
+          var dsResult: DistrictServiceResult = null
+          if(responseFormat.equals(SrxResponseFormat.Object)) {
+            val queryResult = executeQuery(Some(id.get), None)
+            dsResult = new DistrictServiceResult(
+              SifRequestAction.Update,
+              SifRequestAction.getSuccessStatusCode(SifRequestAction.Update),
+              queryResult,
+              responseFormat
+            )
+          } else {
+            dsResult = new DistrictServiceResult(
+              SifRequestAction.Update,
+              SifRequestAction.getSuccessStatusCode(SifRequestAction.Update),
+              result,
+              responseFormat
+            )
+          }
+          dsResult.setId(id.get)
+          dsResult
         } else {
           throw result.exceptions.head
         }

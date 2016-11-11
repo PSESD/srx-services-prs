@@ -3,11 +3,12 @@ package org.psesd.srx.services.prs
 import java.sql.Date
 
 import org.json4s.JValue
+import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
 import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestAction, SifRequestParameter}
-import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult}
+import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult, SrxResponseFormat}
 import org.psesd.srx.shared.data.{Datasource, DatasourceResult}
 
 import scala.collection.mutable.ArrayBuffer
@@ -75,12 +76,13 @@ class Consent(
   * @since 1.0
   * @author Stephen Pugmire (iTrellis, LLC)
   */
-class ConsentResult(requestAction: SifRequestAction, httpStatusCode: Int, result: DatasourceResult) extends PrsEntityResult(
+class ConsentResult(requestAction: SifRequestAction, httpStatusCode: Int, result: DatasourceResult, responseFormat: SrxResponseFormat) extends PrsEntityResult(
   requestAction,
   httpStatusCode,
   result,
   Consent.getConsentFromResult,
-    <consent/>
+  <consents/>,
+  responseFormat
 ) {
 }
 
@@ -151,7 +153,23 @@ object Consent extends PrsEntityService {
       datasource.close()
 
       if (result.success) {
-        new ConsentResult(SifRequestAction.Create, SifRequestAction.getSuccessStatusCode(SifRequestAction.Create), result)
+        val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
+        if(responseFormat.equals(SrxResponseFormat.Object)) {
+          val queryResult = executeQuery(Some(result.id.get.toInt))
+          new ConsentResult(
+            SifRequestAction.Create,
+            SifRequestAction.getSuccessStatusCode(SifRequestAction.Create),
+            queryResult,
+            responseFormat
+          )
+        } else {
+          new ConsentResult(
+            SifRequestAction.Create,
+            SifRequestAction.getSuccessStatusCode(SifRequestAction.Create),
+            result,
+            responseFormat
+          )
+        }
       } else {
         throw result.exceptions.head
       }
@@ -177,7 +195,12 @@ object Consent extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          val consentResult = new ConsentResult(SifRequestAction.Delete, SifRequestAction.getSuccessStatusCode(SifRequestAction.Delete), result)
+          val consentResult = new ConsentResult(
+            SifRequestAction.Delete,
+            SifRequestAction.getSuccessStatusCode(SifRequestAction.Delete),
+            result,
+            SrxResponseFormat.getResponseFormat(parameters)
+          )
           consentResult.setId(id.get)
           consentResult
         } else {
@@ -196,21 +219,17 @@ object Consent extends PrsEntityService {
       SrxResourceErrorResult(SifHttpStatusCode.BadRequest, new ArgumentInvalidException("id parameter"))
     } else {
       try {
-        val selectFrom = "select * from srx_services_prs.consent"
-        val datasource = new Datasource(datasourceConfig)
-        val result = {
-          if (id.isEmpty) {
-            datasource.get(selectFrom + " order by id;")
-          } else {
-            datasource.get(selectFrom + " where id = ?;", id.get)
-          }
-        }
-        datasource.close()
+        val result = executeQuery(id)
         if (result.success) {
           if (id.isDefined && result.rows.isEmpty) {
             SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.Consents.toString))
           } else {
-            new ConsentResult(SifRequestAction.Query, SifHttpStatusCode.Ok, result)
+            new ConsentResult(
+              SifRequestAction.Query,
+              SifHttpStatusCode.Ok,
+              result,
+              SrxResponseFormat.getResponseFormat(parameters)
+            )
           }
         } else {
           throw result.exceptions.head
@@ -220,6 +239,20 @@ object Consent extends PrsEntityService {
           SrxResourceErrorResult(SifHttpStatusCode.InternalServerError, e)
       }
     }
+  }
+
+  private def executeQuery(id: Option[Int]): DatasourceResult = {
+    val selectFrom = "select * from srx_services_prs.consent"
+    val datasource = new Datasource(datasourceConfig)
+    val result = {
+      if (id.isEmpty) {
+        datasource.get(selectFrom + " order by id;")
+      } else {
+        datasource.get(selectFrom + " where id = ?;", id.get)
+      }
+    }
+    datasource.close()
+    result
   }
 
   def update(resource: SrxResource, parameters: List[SifRequestParameter]): SrxResourceResult = {
@@ -255,9 +288,26 @@ object Consent extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          val pResult = new ConsentResult(SifRequestAction.Update, SifRequestAction.getSuccessStatusCode(SifRequestAction.Update), result)
-          pResult.setId(id.get)
-          pResult
+          val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
+          var cResult: ConsentResult = null
+          if(responseFormat.equals(SrxResponseFormat.Object)) {
+            val queryResult = executeQuery(Some(id.get))
+            cResult = new ConsentResult(
+              SifRequestAction.Update,
+              SifRequestAction.getSuccessStatusCode(SifRequestAction.Update),
+              queryResult,
+              responseFormat
+            )
+          } else {
+            cResult = new ConsentResult(
+              SifRequestAction.Update,
+              SifRequestAction.getSuccessStatusCode(SifRequestAction.Update),
+              result,
+              responseFormat
+            )
+          }
+          cResult.setId(id.get)
+          cResult
         } else {
           throw result.exceptions.head
         }

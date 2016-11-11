@@ -1,7 +1,8 @@
 package org.psesd.srx.services.prs
 
 import org.json4s.JValue
-import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult}
+import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
+import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult, SrxResponseFormat}
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
@@ -45,12 +46,13 @@ class ExternalService(
   * @since 1.0
   * @author Stephen Pugmire (iTrellis, LLC)
   */
-class ExternalServiceResult(requestAction: SifRequestAction, httpStatusCode: Int, result: DatasourceResult) extends PrsEntityResult(
+class ExternalServiceResult(requestAction: SifRequestAction, httpStatusCode: Int, result: DatasourceResult, responseFormat: SrxResponseFormat) extends PrsEntityResult(
   requestAction,
   httpStatusCode,
   result,
   ExternalService.getExternalServiceFromResult,
-    <externalService/>
+  <externalServices/>,
+  responseFormat
 ) {
 }
 
@@ -117,7 +119,23 @@ object ExternalService extends PrsEntityService {
       datasource.close()
 
       if (result.success) {
-        new ExternalServiceResult(SifRequestAction.Create, SifRequestAction.getSuccessStatusCode(SifRequestAction.Create), result)
+        val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
+        if(responseFormat.equals(SrxResponseFormat.Object)) {
+          val queryResult = executeQuery(Some(result.id.get.toInt))
+          new ExternalServiceResult(
+            SifRequestAction.Create,
+            SifRequestAction.getSuccessStatusCode(SifRequestAction.Create),
+            queryResult,
+            responseFormat
+          )
+        } else {
+          new ExternalServiceResult(
+            SifRequestAction.Create,
+            SifRequestAction.getSuccessStatusCode(SifRequestAction.Create),
+            result,
+            responseFormat
+          )
+        }
       } else {
         throw result.exceptions.head
       }
@@ -143,7 +161,12 @@ object ExternalService extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          val esResult = new ExternalServiceResult(SifRequestAction.Delete, SifRequestAction.getSuccessStatusCode(SifRequestAction.Delete), result)
+          val esResult = new ExternalServiceResult(
+            SifRequestAction.Delete,
+            SifRequestAction.getSuccessStatusCode(SifRequestAction.Delete),
+            result,
+            SrxResponseFormat.getResponseFormat(parameters)
+          )
           esResult.setId(id.get)
           esResult
         } else {
@@ -162,21 +185,17 @@ object ExternalService extends PrsEntityService {
       SrxResourceErrorResult(SifHttpStatusCode.BadRequest, new ArgumentInvalidException("id parameter"))
     } else {
       try {
-        val selectFrom = "select srx_services_prs.external_service.* from srx_services_prs.external_service "
-        val datasource = new Datasource(datasourceConfig)
-        val result = {
-          if (id.isEmpty) {
-            datasource.get(selectFrom + "order by srx_services_prs.external_service.id;")
-          } else {
-            datasource.get(selectFrom + "where srx_services_prs.external_service.id = ?;", id.get)
-          }
-        }
-        datasource.close()
+        val result = executeQuery(id)
         if (result.success) {
           if (id.isDefined && result.rows.isEmpty) {
             SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.ExternalServices.toString))
           } else {
-            new ExternalServiceResult(SifRequestAction.Query, SifHttpStatusCode.Ok, result)
+            new ExternalServiceResult(
+              SifRequestAction.Query,
+              SifHttpStatusCode.Ok,
+              result,
+              SrxResponseFormat.getResponseFormat(parameters)
+            )
           }
         } else {
           throw result.exceptions.head
@@ -186,6 +205,20 @@ object ExternalService extends PrsEntityService {
           SrxResourceErrorResult(SifHttpStatusCode.InternalServerError, e)
       }
     }
+  }
+
+  private def executeQuery(id: Option[Int]): DatasourceResult = {
+    val selectFrom = "select srx_services_prs.external_service.* from srx_services_prs.external_service "
+    val datasource = new Datasource(datasourceConfig)
+    val result = {
+      if (id.isEmpty) {
+        datasource.get(selectFrom + "order by srx_services_prs.external_service.id;")
+      } else {
+        datasource.get(selectFrom + "where srx_services_prs.external_service.id = ?;", id.get)
+      }
+    }
+    datasource.close()
+    result
   }
 
   def update(resource: SrxResource, parameters: List[SifRequestParameter]): SrxResourceResult = {
@@ -219,9 +252,26 @@ object ExternalService extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          val pResult = new ExternalServiceResult(SifRequestAction.Update, SifRequestAction.getSuccessStatusCode(SifRequestAction.Update), result)
-          pResult.setId(id.get)
-          pResult
+          val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
+          var esResult: ExternalServiceResult = null
+          if(responseFormat.equals(SrxResponseFormat.Object)) {
+            val queryResult = executeQuery(Some(id.get))
+            esResult = new ExternalServiceResult(
+              SifRequestAction.Update,
+              SifRequestAction.getSuccessStatusCode(SifRequestAction.Update),
+              queryResult,
+              responseFormat
+            )
+          } else {
+            esResult = new ExternalServiceResult(
+              SifRequestAction.Update,
+              SifRequestAction.getSuccessStatusCode(SifRequestAction.Update),
+              result,
+              responseFormat
+            )
+          }
+          esResult.setId(id.get)
+          esResult
         } else {
           throw result.exceptions.head
         }

@@ -1,7 +1,8 @@
 package org.psesd.srx.services.prs
 
 import org.json4s.JValue
-import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult}
+import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
+import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult, SrxResponseFormat}
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
@@ -47,12 +48,13 @@ class DataObject(
   * @since 1.0
   * @author Stephen Pugmire (iTrellis, LLC)
   */
-class DataObjectResult(requestAction: SifRequestAction, httpStatusCode: Int, result: DatasourceResult) extends PrsEntityResult(
+class DataObjectResult(requestAction: SifRequestAction, httpStatusCode: Int, result: DatasourceResult, responseFormat: SrxResponseFormat) extends PrsEntityResult(
   requestAction,
   httpStatusCode,
   result,
   DataObject.getDataObjectsFromResult,
-    <dataObjects/>
+  <dataObjects/>,
+  responseFormat
 ) {
 }
 
@@ -125,7 +127,23 @@ object DataObject extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          new DataObjectResult(SifRequestAction.Create, SifRequestAction.getSuccessStatusCode(SifRequestAction.Create), result)
+          val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
+          if(responseFormat.equals(SrxResponseFormat.Object)) {
+            val queryResult = executeQuery(Some(result.id.get.toInt), None)
+            new DataObjectResult(
+              SifRequestAction.Create,
+              SifRequestAction.getSuccessStatusCode(SifRequestAction.Create),
+              queryResult,
+              responseFormat
+            )
+          } else {
+            new DataObjectResult(
+              SifRequestAction.Create,
+              SifRequestAction.getSuccessStatusCode(SifRequestAction.Create),
+              result,
+              responseFormat
+            )
+          }
         } else {
           throw result.exceptions.head
         }
@@ -152,7 +170,12 @@ object DataObject extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          val dsResult = new DataObjectResult(SifRequestAction.Delete, SifRequestAction.getSuccessStatusCode(SifRequestAction.Delete), result)
+          val dsResult = new DataObjectResult(
+            SifRequestAction.Delete,
+            SifRequestAction.getSuccessStatusCode(SifRequestAction.Delete),
+            result,
+            SrxResponseFormat.getResponseFormat(parameters)
+          )
           dsResult.setId(id.get)
           dsResult
         } else {
@@ -175,21 +198,17 @@ object DataObject extends PrsEntityService {
         SrxResourceErrorResult(SifHttpStatusCode.BadRequest, new ArgumentInvalidException("dataSetId parameter"))
       } else {
         try {
-          val selectFrom = "select srx_services_prs.data_object.* from srx_services_prs.data_object"
-          val datasource = new Datasource(datasourceConfig)
-          val result = {
-            if (id.isEmpty) {
-              datasource.get(selectFrom + " where srx_services_prs.data_object.data_set_id = ? order by srx_services_prs.data_object.id;", dataSetIdParam.get.value.toInt)
-            } else {
-              datasource.get(selectFrom + " where srx_services_prs.data_object.id = ?;", id.get)
-            }
-          }
-          datasource.close()
+          val result = executeQuery(id, dataSetIdParam)
           if (result.success) {
             if (id.isDefined && result.rows.isEmpty) {
               SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.DataObjects.toString))
             } else {
-              new DataObjectResult(SifRequestAction.Query, SifHttpStatusCode.Ok, result)
+              new DataObjectResult(
+                SifRequestAction.Query,
+                SifHttpStatusCode.Ok,
+                result,
+                SrxResponseFormat.getResponseFormat(parameters)
+              )
             }
           } else {
             throw result.exceptions.head
@@ -200,6 +219,20 @@ object DataObject extends PrsEntityService {
         }
       }
     }
+  }
+
+  private def executeQuery(id: Option[Int], dataSetIdParam: Option[SifRequestParameter]): DatasourceResult = {
+    val selectFrom = "select srx_services_prs.data_object.* from srx_services_prs.data_object"
+    val datasource = new Datasource(datasourceConfig)
+    val result = {
+      if (id.isEmpty) {
+        datasource.get(selectFrom + " where srx_services_prs.data_object.data_set_id = ? order by srx_services_prs.data_object.id;", dataSetIdParam.get.value.toInt)
+      } else {
+        datasource.get(selectFrom + " where srx_services_prs.data_object.id = ?;", id.get)
+      }
+    }
+    datasource.close()
+    result
   }
 
   def update(resource: SrxResource, parameters: List[SifRequestParameter]): SrxResourceResult = {
@@ -242,9 +275,26 @@ object DataObject extends PrsEntityService {
           datasource.close()
 
           if (result.success) {
-            val aeResult = new DataObjectResult(SifRequestAction.Update, SifRequestAction.getSuccessStatusCode(SifRequestAction.Update), result)
-            aeResult.setId(id.get)
-            aeResult
+            val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
+            var dResult: DataObjectResult = null
+            if(responseFormat.equals(SrxResponseFormat.Object)) {
+              val queryResult = executeQuery(Some(id.get), None)
+              dResult = new DataObjectResult(
+                SifRequestAction.Update,
+                SifRequestAction.getSuccessStatusCode(SifRequestAction.Update),
+                queryResult,
+                responseFormat
+              )
+            } else {
+              dResult = new DataObjectResult(
+                SifRequestAction.Update,
+                SifRequestAction.getSuccessStatusCode(SifRequestAction.Update),
+                result,
+                responseFormat
+              )
+            }
+            dResult.setId(id.get)
+            dResult
           } else {
             throw result.exceptions.head
           }

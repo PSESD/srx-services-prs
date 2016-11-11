@@ -1,7 +1,8 @@
 package org.psesd.srx.services.prs
 
 import org.json4s.JValue
-import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult}
+import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
+import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult, SrxResponseFormat}
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
@@ -45,12 +46,13 @@ class Student(
   * @since 1.0
   * @author Stephen Pugmire (iTrellis, LLC)
   */
-class StudentResult(requestAction: SifRequestAction, httpStatusCode: Int, result: DatasourceResult) extends PrsEntityResult(
+class StudentResult(requestAction: SifRequestAction, httpStatusCode: Int, result: DatasourceResult, responseFormat: SrxResponseFormat) extends PrsEntityResult(
   requestAction,
   httpStatusCode,
   result,
   Student.getStudentsFromResult,
-    <students/>
+  <students/>,
+  responseFormat
 ) {
 }
 
@@ -142,7 +144,23 @@ object Student extends PrsEntityService {
       datasource.close()
 
       if (result.success) {
-        new StudentResult(SifRequestAction.Create, SifRequestAction.getSuccessStatusCode(SifRequestAction.Create), result)
+        val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
+        if(responseFormat.equals(SrxResponseFormat.Object)) {
+          val queryResult = executeQuery(Some(result.id.get.toInt), None, None)
+          new StudentResult(
+            SifRequestAction.Create,
+            SifRequestAction.getSuccessStatusCode(SifRequestAction.Create),
+            queryResult,
+            responseFormat
+          )
+        } else {
+          new StudentResult(
+            SifRequestAction.Create,
+            SifRequestAction.getSuccessStatusCode(SifRequestAction.Create),
+            result,
+            responseFormat
+          )
+        }
       } else {
         throw result.exceptions.head
       }
@@ -172,7 +190,12 @@ object Student extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          val sResult = new StudentResult(SifRequestAction.Delete, SifRequestAction.getSuccessStatusCode(SifRequestAction.Delete), result)
+          val sResult = new StudentResult(
+            SifRequestAction.Delete,
+            SifRequestAction.getSuccessStatusCode(SifRequestAction.Delete),
+            result,
+            SrxResponseFormat.getResponseFormat(parameters)
+          )
           sResult.setId(id.get)
           sResult
         } else {
@@ -196,36 +219,17 @@ object Student extends PrsEntityService {
         SrxResourceErrorResult(SifHttpStatusCode.BadRequest, new ArgumentInvalidException("districtId or districtServiceId parameter"))
       } else {
         try {
-          val selectFrom = "select student.id, " +
-            "student.district_service_id student_district_service_id, " +
-            "student.district_student_id, " +
-            "consent.district_service_id consent_district_service_id, " +
-            "consent.id consent_consent_id, " +
-            "consent.consent_type, " +
-            "consent.start_date, " +
-            "consent.end_date, " +
-            "district_service.district_id district_service_district_id " +
-            "from srx_services_prs.student " +
-            "join srx_services_prs.consent on consent.id = student.consent_id " +
-            "left join srx_services_prs.district_service on district_service.id = student.district_service_id "
-          val datasource = new Datasource(datasourceConfig)
-          val result = {
-            if (id.isEmpty) {
-              if(districtServiceIdParam.isDefined) {
-                datasource.get(selectFrom + "where student.district_service_id = ? order by student.id;", districtServiceIdParam.get.value.toInt)
-              } else {
-                datasource.get(selectFrom + "where district_service.district_id = ? order by student.id;", districtIdParam.get.value.toInt)
-              }
-            } else {
-              datasource.get(selectFrom + "where student.id = ?;", id.get)
-            }
-          }
-          datasource.close()
+          val result = executeQuery(id, districtIdParam, districtServiceIdParam)
           if (result.success) {
             if (id.isDefined && result.rows.isEmpty) {
               SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.Students.toString))
             } else {
-              new StudentResult(SifRequestAction.Query, SifHttpStatusCode.Ok, result)
+              new StudentResult(
+                SifRequestAction.Query,
+                SifHttpStatusCode.Ok,
+                result,
+                SrxResponseFormat.getResponseFormat(parameters)
+              )
             }
           } else {
             throw result.exceptions.head
@@ -236,6 +240,35 @@ object Student extends PrsEntityService {
         }
       }
     }
+  }
+
+  private def executeQuery(id: Option[Int], districtIdParam: Option[SifRequestParameter], districtServiceIdParam: Option[SifRequestParameter]): DatasourceResult = {
+    val selectFrom = "select student.id, " +
+      "student.district_service_id student_district_service_id, " +
+      "student.district_student_id, " +
+      "consent.district_service_id consent_district_service_id, " +
+      "consent.id consent_consent_id, " +
+      "consent.consent_type, " +
+      "consent.start_date, " +
+      "consent.end_date, " +
+      "district_service.district_id district_service_district_id " +
+      "from srx_services_prs.student " +
+      "join srx_services_prs.consent on consent.id = student.consent_id " +
+      "left join srx_services_prs.district_service on district_service.id = student.district_service_id "
+    val datasource = new Datasource(datasourceConfig)
+    val result = {
+      if (id.isEmpty) {
+        if(districtServiceIdParam.isDefined) {
+          datasource.get(selectFrom + "where student.district_service_id = ? order by student.id;", districtServiceIdParam.get.value.toInt)
+        } else {
+          datasource.get(selectFrom + "where district_service.district_id = ? order by student.id;", districtIdParam.get.value.toInt)
+        }
+      } else {
+        datasource.get(selectFrom + "where student.id = ?;", id.get)
+      }
+    }
+    datasource.close()
+    result
   }
 
   def update(resource: SrxResource, parameters: List[SifRequestParameter]): SrxResourceResult = {
@@ -293,9 +326,26 @@ object Student extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          val aeResult = new StudentResult(SifRequestAction.Update, SifRequestAction.getSuccessStatusCode(SifRequestAction.Update), result)
-          aeResult.setId(id.get)
-          aeResult
+          val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
+          var sResult: StudentResult = null
+          if(responseFormat.equals(SrxResponseFormat.Object)) {
+            val queryResult = executeQuery(Some(id.get), None, None)
+            sResult = new StudentResult(
+              SifRequestAction.Update,
+              SifRequestAction.getSuccessStatusCode(SifRequestAction.Update),
+              queryResult,
+              responseFormat
+            )
+          } else {
+            sResult = new StudentResult(
+              SifRequestAction.Update,
+              SifRequestAction.getSuccessStatusCode(SifRequestAction.Update),
+              result,
+              responseFormat
+            )
+          }
+          sResult.setId(id.get)
+          sResult
         } else {
           throw result.exceptions.head
         }
