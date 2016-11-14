@@ -91,7 +91,7 @@ object AuthorizedEntity extends PrsEntityService {
       throw new ArgumentNullException("authorizedEntityXml parameter")
     }
     val rootElementName = authorizedEntityXml.label
-    if (rootElementName != "authorizedEntity") {
+    if (rootElementName != "authorizedEntity" && rootElementName != "root") {
       throw new ArgumentInvalidException("root element '%s'".format(rootElementName))
     }
     val id = (authorizedEntityXml \ "id").textOption.getOrElse("0").toInt

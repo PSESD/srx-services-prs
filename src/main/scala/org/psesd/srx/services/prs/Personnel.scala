@@ -80,7 +80,7 @@ object Personnel extends PrsEntityService {
     }
 
     val rootElementName = personnelXml.label
-    if (rootElementName != "personnel") {
+    if (rootElementName != "personnel" && rootElementName != "root") {
       throw new ArgumentInvalidException("root element '%s'".format(rootElementName))
     }
     val id = (personnelXml \ "id").textOption.getOrElse("0").toInt

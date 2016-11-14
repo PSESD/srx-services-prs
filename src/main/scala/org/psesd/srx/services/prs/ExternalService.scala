@@ -80,7 +80,7 @@ object ExternalService extends PrsEntityService {
     }
 
     val rootElementName = externalServiceXml.label
-    if (rootElementName != "externalService") {
+    if (rootElementName != "externalService" && rootElementName != "root") {
       throw new ArgumentInvalidException("root element '%s'".format(rootElementName))
     }
     val id = (externalServiceXml \ "id").textOption.getOrElse("0").toInt

@@ -111,7 +111,7 @@ object Consent extends PrsEntityService {
     }
 
     val rootElementName = consentXml.label
-    if (rootElementName != "consent") {
+    if (rootElementName != "consent" && rootElementName != "root") {
       throw new ArgumentInvalidException("root element '%s'".format(rootElementName))
     }
     val id = (consentXml \ "id").textOption.getOrElse("0").toInt

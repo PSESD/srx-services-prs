@@ -72,7 +72,7 @@ object DataObject extends PrsEntityService {
       throw new ArgumentNullException("dataObjectXml parameter")
     }
     val rootElementName = dataObjectXml.label
-    if (rootElementName != "dataObject") {
+    if (rootElementName != "dataObject" && rootElementName != "root") {
       throw new ArgumentInvalidException("root element '%s'".format(rootElementName))
     }
     var dataSetId = (dataObjectXml \ "dataSetId").textOption.getOrElse("0").toInt

@@ -160,7 +160,7 @@ object DistrictService extends PrsEntityService {
       throw new ArgumentNullException("districtId parameter")
     }
     val rootElementName = districtServiceXml.label
-    if (rootElementName != "districtService") {
+    if (rootElementName != "districtService" && rootElementName != "root") {
       throw new ArgumentInvalidException("root element '%s'".format(rootElementName))
     }
     val id = (districtServiceXml \ "id").textOption.getOrElse("0").toInt

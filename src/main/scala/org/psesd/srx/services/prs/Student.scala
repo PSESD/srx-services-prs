@@ -70,7 +70,7 @@ object Student extends PrsEntityService {
       throw new ArgumentNullException("studentXml parameter")
     }
     val rootElementName = studentXml.label
-    if (rootElementName != "student") {
+    if (rootElementName != "student" && rootElementName != "root") {
       throw new ArgumentInvalidException("root element '%s'".format(rootElementName))
     }
     val id = (studentXml \ "id").textOption.getOrElse("0").toInt
