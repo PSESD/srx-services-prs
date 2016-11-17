@@ -31,7 +31,11 @@ class Contact(
   }
 
   def toJson: JValue = {
-    toXml.toJsonStringNoRoot.toJson
+    if(isEmpty) {
+      "{}".toJson
+    } else {
+      toXml.toJsonStringNoRoot.toJson
+    }
   }
 
   def toXml: Node = {
