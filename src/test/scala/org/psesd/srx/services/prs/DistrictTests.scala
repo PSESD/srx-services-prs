@@ -17,7 +17,7 @@ class DistrictTests extends FunSuite {
     val contactName = "jon"
     val contactPhone = "555-1212"
     val mainContact = Some(new Contact(456, Some(contactName), None, None, Some(contactPhone), None, None))
-    val district = new District(id, name, Some(ncesleaCode), Some(zoneId), mainContact)
+    val district = new District(id, name, Some(ncesleaCode), Some(zoneId), mainContact, None)
     assert(district.id.equals(id))
     assert(district.name.equals(name))
     assert(district.ncesleaCode.get.equals(ncesleaCode))

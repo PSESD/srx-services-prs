@@ -1,6 +1,7 @@
 package org.psesd.srx.services.prs
 
-import org.json4s.JValue
+import org.json4s._
+import org.json4s.JsonDSL._
 import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
 import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult, SrxResponseFormat}
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
@@ -19,15 +20,44 @@ import scala.xml.Node
   * @author Stephen Pugmire (iTrellis, LLC)
   */
 class District(
-                        val id: Int,
-                        val name: String,
-                        val ncesleaCode: Option[String],
-                        val zoneId: Option[String],
-                        val mainContact: Option[Contact]
-                      ) extends SrxResource with PrsEntity {
+                val id: Int,
+                val name: String,
+                val ncesleaCode: Option[String],
+                val zoneId: Option[String],
+                val mainContact: Option[Contact],
+                val services: Option[ArrayBuffer[DistrictService]]
+              ) extends SrxResource with PrsEntity {
 
   def toJson: JValue = {
-    toXml.toJsonStringNoRoot.toJson
+    if(services.isDefined) {
+      if(mainContact.isDefined) {
+        ("id" -> id.toString) ~
+          ("name" -> name) ~
+          ("ncesleaCode" -> ncesleaCode.orNull) ~
+          ("zoneId" -> zoneId.orNull) ~
+          ("mainContact" -> mainContact.get.toJson) ~
+          ("services" -> services.get.map { d => d.toJson })
+      } else {
+        ("id" -> id.toString) ~
+          ("name" -> name) ~
+          ("ncesleaCode" -> ncesleaCode.orNull) ~
+          ("zoneId" -> zoneId.orNull) ~
+          ("services" -> services.get.map { d => d.toJson })
+      }
+    } else {
+      if(mainContact.isDefined) {
+        ("id" -> id.toString) ~
+          ("name" -> name) ~
+          ("ncesleaCode" -> ncesleaCode.orNull) ~
+          ("zoneId" -> zoneId.orNull) ~
+          ("mainContact" -> mainContact.get.toJson)
+      } else {
+        ("id" -> id.toString) ~
+          ("name" -> name) ~
+          ("ncesleaCode" -> ncesleaCode.orNull) ~
+          ("zoneId" -> zoneId.orNull)
+      }
+    }
   }
 
   def toXml: Node = {
@@ -37,6 +67,7 @@ class District(
       {optional(ncesleaCode.orNull, <ncesleaCode>{ncesleaCode.orNull}</ncesleaCode>)}
       {optional(zoneId.orNull, <zoneID>{zoneId.orNull}</zoneID>)}
       {if(mainContact.isDefined && !mainContact.get.isEmpty) mainContact.get.toXml}
+      {optional({if(services.isDefined) "true" else null}, <services>{if(services.isDefined) services.get.map(d => d.toXml)}</services>)}
     </district>
   }
 
@@ -53,7 +84,7 @@ class DistrictResult(requestAction: SifRequestAction, httpStatusCode: Int, resul
   httpStatusCode,
   result,
   District.getDistrictsFromResult,
-  <districts/>,
+    <districts/>,
   responseFormat
 ) {
 }
@@ -65,7 +96,7 @@ class DistrictResult(requestAction: SifRequestAction, httpStatusCode: Int, resul
   * @author Stephen Pugmire (iTrellis, LLC)
   */
 object District extends PrsEntityService {
-  def apply(id: Int, name: String, ncesleaCode: Option[String], zoneId: Option[String], mainContact: Option[Contact]): District = new District(id, name, ncesleaCode, zoneId, mainContact)
+  def apply(id: Int, name: String, ncesleaCode: Option[String], zoneId: Option[String], mainContact: Option[Contact]): District = new District(id, name, ncesleaCode, zoneId, mainContact, None)
 
   def apply(districtXml: Node, parameters: Option[List[SifRequestParameter]]): District = {
     if (districtXml == null) {
@@ -91,7 +122,8 @@ object District extends PrsEntityService {
         } else {
           None
         }
-      }
+      },
+      None
     )
   }
 
@@ -245,21 +277,32 @@ object District extends PrsEntityService {
   }
 
   private def executeQuery(id: Option[Int]): DatasourceResult = {
-    val selectFrom = "select srx_services_prs.district.*, " +
-      "srx_services_prs.contact.name main_contact_name, " +
-      "srx_services_prs.contact.title main_contact_title, " +
-      "srx_services_prs.contact.email main_contact_email, " +
-      "srx_services_prs.contact.phone main_contact_phone, " +
-      "srx_services_prs.contact.mailing_address main_contact_mailing_address, " +
-      "srx_services_prs.contact.web_address main_contact_web_address " +
+    val selectFrom = "select district.*, " +
+      "contact.name main_contact_name, " +
+      "contact.title main_contact_title, " +
+      "contact.email main_contact_email, " +
+      "contact.phone main_contact_phone, " +
+      "contact.mailing_address main_contact_mailing_address, " +
+      "contact.web_address main_contact_web_address, " +
+      "district_service.id district_service_id, " +
+      "district_service.external_service_id, " +
+      "external_service.name external_service_name, " +
+      "external_service.authorized_entity_id, " +
+      "authorized_entity.name authorized_entity_name, " +
+      "district_service.initiation_date, " +
+      "district_service.expiration_date, " +
+      "district_service.requires_personnel " +
       "from srx_services_prs.district " +
-      "join srx_services_prs.contact on srx_services_prs.contact.id = srx_services_prs.district.main_contact_id "
+      "left join srx_services_prs.contact on contact.id = district.main_contact_id " +
+      "left join srx_services_prs.district_service on district_service.district_id = district.id " +
+      "left join srx_services_prs.external_service on external_service.id = district_service.external_service_id " +
+      "left join srx_services_prs.authorized_entity on authorized_entity.id = external_service.authorized_entity_id "
     val datasource = new Datasource(datasourceConfig)
     val result = {
       if (id.isEmpty) {
-        datasource.get(selectFrom + "order by srx_services_prs.district.id;")
+        datasource.get(selectFrom + "order by district.id;")
       } else {
-        datasource.get(selectFrom + "where srx_services_prs.district.id = ?;", id.get)
+        datasource.get(selectFrom + "where district.id = ?;", id.get)
       }
     }
     datasource.close()
@@ -360,29 +403,65 @@ object District extends PrsEntityService {
   def getDistrictsFromResult(result: DatasourceResult): List[District] = {
     val districts = ArrayBuffer[District]()
     for (row <- result.rows) {
+      val id = row.getString("id").getOrElse("").toInt
       val mainContactId = row.getString("main_contact_id")
-      val district = District(
-        row.getString("id").getOrElse("").toInt,
-        row.getString("name").getOrElse(""),
-        row.getString("nces_lea_code"),
-        row.getString("zone_id"),
-        {
-          if (mainContactId.isDefined) {
-            Some(Contact(
-              mainContactId.get.toInt,
-              row.getString("main_contact_name"),
-              row.getString("main_contact_title"),
-              row.getString("main_contact_email"),
-              row.getString("main_contact_phone"),
-              row.getString("main_contact_mailing_address"),
-              row.getString("main_contact_web_address")
-            ))
-          } else {
+      val districtServiceId = row.getString("district_service_id")
+      val district = districts.find(d => d.id.equals(id))
+      if (district.isDefined) {
+        if (districtServiceId.isDefined) {
+          district.get.services.get += DistrictService(
+            districtServiceId.get.toInt,
+            id,
+            row.getString("external_service_id").get.toInt,
+            row.getString("external_service_name"),
+            Some(row.getString("authorized_entity_id").get.toInt),
+            row.getString("authorized_entity_name"),
+            row.getString("initiation_date").get,
+            row.getString("expiration_date").get,
+            row.getBoolean("requires_personnel").get,
             None
-          }
+          )
         }
-      )
-      districts += district
+      } else {
+        districts += new District(
+          id,
+          row.getString("name").getOrElse(""),
+          row.getString("nces_lea_code"),
+          row.getString("zone_id"),
+          {
+            if (mainContactId.isDefined) {
+              Some(Contact(
+                mainContactId.get.toInt,
+                row.getString("main_contact_name"),
+                row.getString("main_contact_title"),
+                row.getString("main_contact_email"),
+                row.getString("main_contact_phone"),
+                row.getString("main_contact_mailing_address"),
+                row.getString("main_contact_web_address")
+              ))
+            } else {
+              None
+            }
+          },
+          {
+            if(districtServiceId.isDefined)
+              Some(ArrayBuffer[DistrictService](DistrictService(
+                districtServiceId.get.toInt,
+                id,
+                row.getString("external_service_id").get.toInt,
+                row.getString("external_service_name"),
+                Some(row.getString("authorized_entity_id").get.toInt),
+                row.getString("authorized_entity_name"),
+                row.getString("initiation_date").get,
+                row.getString("expiration_date").get,
+                row.getBoolean("requires_personnel").get,
+                None
+              )))
+            else
+              None
+          }
+        )
+      }
     }
     districts.toList
   }
