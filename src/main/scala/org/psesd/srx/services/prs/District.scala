@@ -65,7 +65,7 @@ class District(
       <id>{id.toString}</id>
       <name>{name}</name>
       {optional(ncesleaCode.orNull, <ncesleaCode>{ncesleaCode.orNull}</ncesleaCode>)}
-      {optional(zoneId.orNull, <zoneID>{zoneId.orNull}</zoneID>)}
+      {optional(zoneId.orNull, <zoneId>{zoneId.orNull}</zoneId>)}
       {if(mainContact.isDefined && !mainContact.get.isEmpty) mainContact.get.toXml}
       {optional({if(services.isDefined) "true" else null}, <services>{if(services.isDefined) services.get.map(d => d.toXml)}</services>)}
     </district>
@@ -109,7 +109,7 @@ object District extends PrsEntityService {
     val id = (districtXml \ "id").textOption.getOrElse("0").toInt
     val name = (districtXml \ "name").textRequired("district.name")
     val ncesleaCode = (districtXml \ "ncesleaCode").textOption
-    val zoneId = (districtXml \ "zoneID").textOption
+    val zoneId = (districtXml \ "zoneId").textOption
     val mainContact = districtXml \ "mainContact"
     new District(
       id,

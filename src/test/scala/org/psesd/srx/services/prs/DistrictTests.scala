@@ -54,7 +54,7 @@ class DistrictTests extends FunSuite {
         <id>{id}</id>
         <name>{name}</name>
         <ncesleaCode>{ncesleaCode}</ncesleaCode>
-        <zoneID>{zoneId}</zoneID>
+        <zoneId>{zoneId}</zoneId>
         <mainContact>
           <name>{contactName}</name>
           <phone>{contactPhone}</phone>
