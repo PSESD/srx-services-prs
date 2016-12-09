@@ -3,7 +3,7 @@ package org.psesd.srx.services.prs
 import org.json4s._
 import org.json4s.JsonDSL._
 import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
-import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult, SrxResponseFormat}
+import org.psesd.srx.shared.core._
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
@@ -97,6 +97,13 @@ class DistrictResult(requestAction: SifRequestAction, httpStatusCode: Int, resul
   */
 object District extends PrsEntityService {
   def apply(id: Int, name: String, ncesleaCode: Option[String], zoneId: Option[String], mainContact: Option[Contact]): District = new District(id, name, ncesleaCode, zoneId, mainContact, None)
+
+  def apply(requestBody: SrxRequestBody, parameters: Option[List[SifRequestParameter]]): District = {
+    if (requestBody == null) {
+      throw new ArgumentNullException("requestBody parameter")
+    }
+    apply(requestBody.getXml.orNull, parameters)
+  }
 
   def apply(districtXml: Node, parameters: Option[List[SifRequestParameter]]): District = {
     if (districtXml == null) {

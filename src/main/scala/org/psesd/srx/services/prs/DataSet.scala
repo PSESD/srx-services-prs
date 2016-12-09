@@ -3,7 +3,7 @@ package org.psesd.srx.services.prs
 import org.json4s._
 import org.json4s.JsonDSL._
 import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
-import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult, SrxResponseFormat}
+import org.psesd.srx.shared.core._
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
@@ -73,6 +73,13 @@ class DataSetResult(requestAction: SifRequestAction, httpStatusCode: Int, result
   */
 object DataSet extends PrsEntityService {
   def apply(id: Int, name: Option[String], description: Option[String], dataObjects: Option[ArrayBuffer[DataObject]]): DataSet = new DataSet(id, name, description, dataObjects)
+
+  def apply(requestBody: SrxRequestBody, parameters: Option[List[SifRequestParameter]]): DataSet = {
+    if (requestBody == null) {
+      throw new ArgumentNullException("requestBody parameter")
+    }
+    apply(requestBody.getXml.orNull, parameters)
+  }
 
   def apply(dataSetXml: Node, parameters: Option[List[SifRequestParameter]]): DataSet = {
     if (dataSetXml == null) {

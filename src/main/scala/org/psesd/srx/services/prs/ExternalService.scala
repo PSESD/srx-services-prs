@@ -2,7 +2,7 @@ package org.psesd.srx.services.prs
 
 import org.json4s.JValue
 import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
-import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult, SrxResponseFormat}
+import org.psesd.srx.shared.core._
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
@@ -69,6 +69,13 @@ object ExternalService extends PrsEntityService {
              name: Option[String],
              description: Option[String]
            ): ExternalService = new ExternalService(id, authorizedEntityId, name, description)
+
+  def apply(requestBody: SrxRequestBody, parameters: Option[List[SifRequestParameter]]): ExternalService = {
+    if (requestBody == null) {
+      throw new ArgumentNullException("requestBody parameter")
+    }
+    apply(requestBody.getXml.orNull, parameters)
+  }
 
   def apply(externalServiceXml: Node, parameters: Option[List[SifRequestParameter]]): ExternalService = {
     if (externalServiceXml == null) {

@@ -5,7 +5,7 @@ import java.sql.Date
 import org.json4s._
 import org.json4s.JsonDSL._
 import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
-import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult, SrxResponseFormat}
+import org.psesd.srx.shared.core._
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
@@ -150,6 +150,13 @@ object DistrictService extends PrsEntityService {
     requiresPersonnel,
     dataSets
   )
+
+  def apply(requestBody: SrxRequestBody, parameters: Option[List[SifRequestParameter]]): DistrictService = {
+    if (requestBody == null) {
+      throw new ArgumentNullException("requestBody parameter")
+    }
+    apply(requestBody.getXml.orNull, parameters)
+  }
 
   def apply(districtServiceXml: Node, parameters: Option[List[SifRequestParameter]]): DistrictService = {
     if (districtServiceXml == null) {

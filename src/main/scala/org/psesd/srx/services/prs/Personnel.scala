@@ -2,7 +2,7 @@ package org.psesd.srx.services.prs
 
 import org.json4s.JValue
 import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
-import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult, SrxResponseFormat}
+import org.psesd.srx.shared.core._
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
@@ -69,6 +69,13 @@ object Personnel extends PrsEntityService {
     firstName: Option[String],
     lastName: Option[String]
   ): Personnel = new Personnel(id, authorizedEntityId, firstName, lastName)
+
+  def apply(requestBody: SrxRequestBody, parameters: Option[List[SifRequestParameter]]): Personnel = {
+    if (requestBody == null) {
+      throw new ArgumentNullException("requestBody parameter")
+    }
+    apply(requestBody.getXml.orNull, parameters)
+  }
 
   def apply(personnelXml: Node, parameters: Option[List[SifRequestParameter]]): Personnel = {
     if (personnelXml == null) {
