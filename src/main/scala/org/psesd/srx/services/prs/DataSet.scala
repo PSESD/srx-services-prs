@@ -4,7 +4,7 @@ import org.json4s._
 import org.json4s.JsonDSL._
 import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
 import org.psesd.srx.shared.core._
-import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
+import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, ArgumentNullOrEmptyOrWhitespaceException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
 import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestAction, SifRequestParameter}
@@ -21,20 +21,24 @@ import scala.xml.Node
   */
 class DataSet(
                         val id: Int,
-                        val name: Option[String],
+                        val name: String,
                         val description: Option[String],
                         val dataObjects: Option[ArrayBuffer[DataObject]]
                       ) extends SrxResource with PrsEntity {
 
+  if (name.isNullOrEmpty) {
+    throw new ArgumentNullOrEmptyOrWhitespaceException("name")
+  }
+
   def toJson: JValue = {
     if(dataObjects.isDefined) {
       ("id" -> id.toString) ~
-        ("name" -> name.orNull) ~
+        ("name" -> name) ~
         ("description" -> description.orNull) ~
         ("dataObjects" -> dataObjects.get.map { d => d.toJson })
     } else {
       ("id" -> id.toString) ~
-        ("name" -> name.orNull) ~
+        ("name" -> name) ~
         ("description" -> description.orNull)
     }
   }
@@ -42,7 +46,7 @@ class DataSet(
   def toXml: Node = {
     <dataSet>
       <id>{id.toString}</id>
-      {optional(name.orNull, <name>{name.orNull}</name>)}
+      {optional(name, <name>{name}</name>)}
       {optional(description.orNull, <description>{description.orNull}</description>)}
       {optional({if(dataObjects.isDefined) "true" else null}, <dataObjects>{if(dataObjects.isDefined) dataObjects.get.map(d => d.toXml)}</dataObjects>)}
     </dataSet>
@@ -72,7 +76,7 @@ class DataSetResult(requestAction: SifRequestAction, httpStatusCode: Int, result
   * @author Stephen Pugmire (iTrellis, LLC)
   */
 object DataSet extends PrsEntityService {
-  def apply(id: Int, name: Option[String], description: Option[String], dataObjects: Option[ArrayBuffer[DataObject]]): DataSet = new DataSet(id, name, description, dataObjects)
+  def apply(id: Int, name: String, description: Option[String], dataObjects: Option[ArrayBuffer[DataObject]]): DataSet = new DataSet(id, name, description, dataObjects)
 
   def apply(requestBody: SrxRequestBody, parameters: Option[List[SifRequestParameter]]): DataSet = {
     if (requestBody == null) {
@@ -90,7 +94,7 @@ object DataSet extends PrsEntityService {
       throw new ArgumentInvalidException("root element '%s'".format(rootElementName))
     }
     val id = (dataSetXml \ "id").textOption.getOrElse("0").toInt
-    val name = (dataSetXml \ "name").textOption
+    val name = (dataSetXml \ "name").textRequired("name")
     val description = (dataSetXml \ "description").textOption
     val dataObjects = ArrayBuffer[DataObject]()
     for(d <- dataSetXml \ "dataObjects" \ "dataObject") {
@@ -120,7 +124,7 @@ object DataSet extends PrsEntityService {
           "DEFAULT, ?, ?) " +
           "RETURNING id;",
         "id",
-        dataSet.name.orNull,
+        dataSet.name,
         dataSet.description.orNull
       )
       if(result.success && dataSet.dataObjects.isDefined) {
@@ -273,7 +277,7 @@ object DataSet extends PrsEntityService {
             "name = ?, " +
             "description = ? " +
             "where id = ?;",
-          dataSet.name.orNull,
+          dataSet.name,
           dataSet.description.orNull,
           id.get
         )
@@ -360,7 +364,7 @@ object DataSet extends PrsEntityService {
       } else {
         dataSets += DataSet(
           id,
-          row.getString("name"),
+          row.getString("name").orNull,
           row.getString("description"),
           {
             if(dataObjectId.isDefined)

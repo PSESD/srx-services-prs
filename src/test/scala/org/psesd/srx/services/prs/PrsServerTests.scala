@@ -917,7 +917,7 @@ class PrsServerTests extends FunSuite {
       val dataSet = DataSet((response.getBodyXml.get \ "dataSet").head , None)
       assert(response.statusCode.equals(SifHttpStatusCode.Ok))
       assert(dataSet.id.equals(dataSetId))
-      assert(dataSet.name.get.equals("sre"))
+      assert(dataSet.name.equals("sre"))
     }
   }
 
@@ -926,7 +926,7 @@ class PrsServerTests extends FunSuite {
       val resource = "%s/%s".format(PrsResource.DataSets.toString, dataSetId.toString)
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.generatorId = Some(TestValues.generatorId)
-      sifRequest.body = Some(DataSet(dataSetId, Some("sre UPDATED"), Some("firstName UPDATED"), None).toXml.toXmlString)
+      sifRequest.body = Some(DataSet(dataSetId, "sre UPDATED", Some("firstName UPDATED"), None).toXml.toXmlString)
       println("UPDATE RESOURCE: %s".format(resource))
       val response = new SifConsumer().update(sifRequest)
       printlnResponse(response)
