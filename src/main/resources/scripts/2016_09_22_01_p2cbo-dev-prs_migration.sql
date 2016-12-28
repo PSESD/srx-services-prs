@@ -1,6 +1,6 @@
 SET NOCOUNT ON;
 select '/* CONTACTS */';
-select 'truncate table srx_services_prs.contact;';
+select 'truncate table srx_services_prs.contact cascade;';
 select 'insert into srx_services_prs.contact (id, name, title, email, phone, mailing_address, web_address) values (' 
 + CAST(ContactID as varchar(50)) + ', '
 + ISNULL('''' + REPLACE(Name, '''', '''''') + '''', 'null') + ', '
@@ -15,7 +15,7 @@ SET NOCOUNT OFF;
 
 SET NOCOUNT ON;
 select '/* AUTHORIZED ENTITY */';
-select 'truncate table srx_services_prs.authorized_entity;';
+select 'truncate table srx_services_prs.authorized_entity cascade;';
 select 'insert into srx_services_prs.authorized_entity (id, name, main_contact_id) values (' 
 + CAST(AuthorizedEntityID as varchar(50)) + ', '
 + ISNULL('''' + REPLACE(AuthorizedEntityName, '''', '''''') + '''', 'null') + ', '
@@ -26,7 +26,7 @@ SET NOCOUNT OFF;
 
 SET NOCOUNT ON;
 select '/* AUTHORIZED ENTITY PERSONNEL */';
-select 'truncate table srx_services_prs.personnel;';
+select 'truncate table srx_services_prs.personnel cascade;';
 select 'insert into srx_services_prs.personnel (id, authorized_entity_id, first_name, last_name) values (' 
 + CAST(PersonnelID as varchar(50)) + ', '
 + CAST(AuthorizedEntityID as varchar(50)) + ', '
@@ -38,7 +38,7 @@ SET NOCOUNT OFF;
 
 SET NOCOUNT ON;
 select '/* EXTERNAL SERVICE */';
-select 'truncate table srx_services_prs.external_service;';
+select 'truncate table srx_services_prs.external_service cascade;';
 select 'insert into srx_services_prs.external_service (id, authorized_entity_id, name, description) values (' 
 + CAST(ExternalServiceID as varchar(50)) + ', '
 + CAST(AuthorizedEntityID as varchar(50)) + ', '
@@ -50,7 +50,7 @@ SET NOCOUNT OFF;
 
 SET NOCOUNT ON;
 select '/* DISTRICT */';
-select 'truncate table srx_services_prs.district;';
+select 'truncate table srx_services_prs.district cascade;';
 select 'insert into srx_services_prs.district (id, name, nces_lea_code, zone_id, main_contact_id) values (' 
 + CAST(DistrictID as varchar(50)) + ', '
 + ISNULL('''' + REPLACE(DistrictName, '''', '''''') + '''', 'null') + ', '
@@ -63,7 +63,7 @@ SET NOCOUNT OFF;
 
 SET NOCOUNT ON;
 select '/* DISTRICT SERVICE */';
-select 'truncate table srx_services_prs.district_service;';
+select 'truncate table srx_services_prs.district_service cascade;';
 select 'insert into srx_services_prs.district_service (id, district_id, external_service_id, requires_personnel, initiation_date, expiration_date) values (' 
 + CAST(DistrictServiceID as varchar(50)) + ', '
 + CAST(DistrictID as varchar(50)) + ', '
@@ -77,7 +77,7 @@ SET NOCOUNT OFF;
 
 SET NOCOUNT ON;
 select '/* DISTRICT SERVICE PERSONNEL */';
-select 'truncate table srx_services_prs.district_service_personnel;';
+select 'truncate table srx_services_prs.district_service_personnel cascade;';
 select 'insert into srx_services_prs.district_service_personnel (id, district_service_id, personnel_id, role) values (' 
 + CAST(AuthorizedPersonnelID as varchar(50)) + ', '
 + CAST(DistrictServiceID as varchar(50)) + ', '
@@ -89,7 +89,7 @@ SET NOCOUNT OFF;
 
 SET NOCOUNT ON;
 select '/* DATA SET */';
-select 'truncate table srx_services_prs.data_set;';
+select 'truncate table srx_services_prs.data_set cascade;';
 select 'insert into srx_services_prs.data_set (id, name, description) values (' 
 + CAST(DataSetID as varchar(50)) + ', '
 + ISNULL('''' + REPLACE(DataSetName, '''', '''''') + '''', 'null') + ', '
@@ -100,7 +100,7 @@ SET NOCOUNT OFF;
 
 SET NOCOUNT ON;
 select '/* DATA OBJECT */';
-select 'truncate table srx_services_prs.data_object;';
+select 'truncate table srx_services_prs.data_object cascade;';
 select 'insert into srx_services_prs.data_object (id, data_set_id, name, filter_type, include_statement) values (' 
 + CAST(SIFDataObjectID as varchar(50)) + ', '
 + CAST(DataSetID as varchar(50)) + ', '
@@ -113,7 +113,7 @@ SET NOCOUNT OFF;
 
 SET NOCOUNT ON;
 select '/* DISTRICT SERVICE DATA SET */';
-select 'truncate table srx_services_prs.district_service_data_set;';
+select 'truncate table srx_services_prs.district_service_data_set cascade;';
 select 'insert into srx_services_prs.district_service_data_set (id, district_service_id, data_set_id) values (' 
 + CAST(DistrictServiceDataSetID as varchar(50)) + ', '
 + CAST(DistrictServiceID as varchar(50)) + ', '
@@ -124,7 +124,7 @@ SET NOCOUNT OFF;
 
 SET NOCOUNT ON;
 select '/* CONSENT */';
-select 'truncate table srx_services_prs.consent;';
+select 'truncate table srx_services_prs.consent cascade;';
 select 'insert into srx_services_prs.consent (id, district_service_id, consent_type, start_date, end_date) values (' 
 + CAST(ConsentID as varchar(50)) + ', '
 + CAST(DistrictServiceID as varchar(50)) + ', '
@@ -137,7 +137,7 @@ SET NOCOUNT OFF;
 
 SET NOCOUNT ON;
 select '/* STUDENT */';
-select 'truncate table srx_services_prs.student;';
+select 'truncate table srx_services_prs.student cascade;';
 select 'insert into srx_services_prs.student (id, district_service_id, district_student_id, consent_id) values (' 
 + CAST(ServiceStudentID as varchar(50)) + ', '
 + CAST(DistrictServiceID as varchar(50)) + ', '
@@ -149,7 +149,7 @@ SET NOCOUNT OFF;
 
 SET NOCOUNT ON;
 select '/* STUDENT PSERONNEL */';
-select 'truncate table srx_services_prs.student_personnel;';
+select 'truncate table srx_services_prs.student_personnel cascade;';
 select 'insert into srx_services_prs.student_personnel (id, student_id, personnel_id) values (' 
 + CAST(PersonnelStudentService.PersonnelStudentServiceID as varchar(50)) + ', '
 + CAST(PersonnelStudentService.ServiceStudentID as varchar(50)) + ', '
