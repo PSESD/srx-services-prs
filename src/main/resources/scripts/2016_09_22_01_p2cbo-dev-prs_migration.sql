@@ -148,7 +148,7 @@ select 'select setval(''srx_services_prs.student_id_seq'', (select max(id) from 
 SET NOCOUNT OFF;
 
 SET NOCOUNT ON;
-select '/* STUDENT PSERONNEL */';
+select '/* STUDENT PERSONNEL */';
 select 'truncate table srx_services_prs.student_personnel cascade;';
 select 'insert into srx_services_prs.student_personnel (id, student_id, personnel_id) values (' 
 + CAST(PersonnelStudentService.PersonnelStudentServiceID as varchar(50)) + ', '
