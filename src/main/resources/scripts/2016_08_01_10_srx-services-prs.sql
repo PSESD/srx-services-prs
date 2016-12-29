@@ -60,6 +60,21 @@ CREATE TABLE IF NOT EXISTS srx_services_prs.authorized_entity
   CONSTRAINT authorized_entity_pkey PRIMARY KEY (id)
 );
 
+CREATE OR REPLACE FUNCTION delete_contact_row ()
+ RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+ DELETE FROM srx_services_prs.contact WHERE id = OLD.main_contact_id;
+ RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER delete_authorized_entity_contact
+ AFTER DELETE
+ ON srx_services_prs.authorized_entity
+ FOR EACH ROW
+ EXECUTE PROCEDURE delete_contact_row();
+
+
 /* ----------- AUTHORIZED ENTITY PERSONNEL ----------- */
 
 DO
@@ -83,7 +98,7 @@ $$;
 CREATE TABLE IF NOT EXISTS srx_services_prs.personnel
 (
   id integer NOT NULL DEFAULT nextval('srx_services_prs.personnel_id_seq'::regclass),
-  authorized_entity_id integer NOT NULL,
+  authorized_entity_id integer NOT NULL REFERENCES srx_services_prs.authorized_entity ON DELETE CASCADE,
   first_name text,
   last_name text,
   CONSTRAINT personnel_pkey PRIMARY KEY (id)
@@ -112,7 +127,7 @@ $$;
 CREATE TABLE IF NOT EXISTS srx_services_prs.external_service
 (
   id integer NOT NULL DEFAULT nextval('srx_services_prs.external_service_id_seq'::regclass),
-  authorized_entity_id integer NOT NULL,
+  authorized_entity_id integer NOT NULL REFERENCES srx_services_prs.authorized_entity ON DELETE CASCADE,
   name text,
   description text,
   CONSTRAINT external_service_pkey PRIMARY KEY (id)
@@ -148,6 +163,20 @@ CREATE TABLE IF NOT EXISTS srx_services_prs.district
   CONSTRAINT district_pkey PRIMARY KEY (id)
 );
 
+CREATE OR REPLACE FUNCTION delete_contact_row ()
+ RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+ DELETE FROM srx_services_prs.contact WHERE id = OLD.main_contact_id;
+ RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER delete_district_contact
+ AFTER DELETE
+ ON srx_services_prs.district
+ FOR EACH ROW
+ EXECUTE PROCEDURE delete_contact_row();
+
 
 /* ----------- DISTRICT SERVICE ----------- */
 
@@ -172,8 +201,8 @@ $$;
 CREATE TABLE IF NOT EXISTS srx_services_prs.district_service
 (
   id integer NOT NULL DEFAULT nextval('srx_services_prs.district_service_id_seq'::regclass),
-  district_id integer NOT NULL,
-  external_service_id integer NOT NULL,
+  district_id integer NOT NULL REFERENCES srx_services_prs.district ON DELETE CASCADE,
+  external_service_id integer NOT NULL REFERENCES srx_services_prs.external_service ON DELETE CASCADE,
   requires_personnel boolean NOT NULL,
   initiation_date date,
   expiration_date date,
@@ -204,8 +233,8 @@ $$;
 CREATE TABLE IF NOT EXISTS srx_services_prs.district_service_personnel
 (
   id integer NOT NULL DEFAULT nextval('srx_services_prs.district_service_personnel_id_seq'::regclass),
-  district_service_id integer NOT NULL,
-  personnel_id integer NOT NULL,
+  district_service_id integer NOT NULL REFERENCES srx_services_prs.district_service ON DELETE CASCADE,
+  personnel_id integer NOT NULL REFERENCES srx_services_prs.personnel ON DELETE CASCADE,
   role text,
   CONSTRAINT district_service_personnel_pkey PRIMARY KEY (id)
 );
@@ -263,7 +292,7 @@ $$;
 CREATE TABLE IF NOT EXISTS srx_services_prs.data_object
 (
   id integer NOT NULL DEFAULT nextval('srx_services_prs.data_object_id_seq'::regclass),
-  data_set_id integer,
+  data_set_id integer REFERENCES srx_services_prs.data_set ON DELETE CASCADE,
   name text NOT NULL,
   filter_type text NOT NULL,
   include_statement text NOT NULL,
@@ -303,8 +332,8 @@ $$;
 CREATE TABLE IF NOT EXISTS srx_services_prs.district_service_data_set
 (
   id integer NOT NULL DEFAULT nextval('srx_services_prs.district_service_data_set_id_seq'::regclass),
-  district_service_id integer NOT NULL,
-  data_set_id integer NOT NULL,
+  district_service_id integer NOT NULL REFERENCES srx_services_prs.district_service ON DELETE CASCADE,
+  data_set_id integer NOT NULL REFERENCES srx_services_prs.data_set ON DELETE CASCADE,
   CONSTRAINT district_service_data_set_pkey PRIMARY KEY (id)
 );
 
@@ -342,7 +371,7 @@ $$;
 CREATE TABLE IF NOT EXISTS srx_services_prs.consent
 (
   id integer NOT NULL DEFAULT nextval('srx_services_prs.consent_id_seq'::regclass),
-  district_service_id integer NOT NULL,
+  district_service_id integer NOT NULL REFERENCES srx_services_prs.district_service ON DELETE CASCADE,
   consent_type text NOT NULL,
   start_date date NOT NULL,
   end_date date NOT NULL,
@@ -373,8 +402,8 @@ $$;
 CREATE TABLE IF NOT EXISTS srx_services_prs.student
 (
   id integer NOT NULL DEFAULT nextval('srx_services_prs.student_id_seq'::regclass),
-  district_service_id integer NOT NULL,
-  consent_id integer NOT NULL,
+  district_service_id integer NOT NULL REFERENCES srx_services_prs.district_service ON DELETE CASCADE,
+  consent_id integer NOT NULL REFERENCES srx_services_prs.consent ON DELETE CASCADE,
   district_student_id text NOT NULL,
   CONSTRAINT student_pkey PRIMARY KEY (id)
 );
@@ -403,8 +432,8 @@ $$;
 CREATE TABLE IF NOT EXISTS srx_services_prs.student_personnel
 (
   id integer NOT NULL DEFAULT nextval('srx_services_prs.student_personnel_id_seq'::regclass),
-  student_id integer NOT NULL,
-  personnel_id integer NOT NULL,
+  student_id integer NOT NULL REFERENCES srx_services_prs.student ON DELETE CASCADE,
+  personnel_id integer NOT NULL REFERENCES srx_services_prs.personnel ON DELETE CASCADE,
   CONSTRAINT student_personnel_pkey PRIMARY KEY (id)
 );
 
