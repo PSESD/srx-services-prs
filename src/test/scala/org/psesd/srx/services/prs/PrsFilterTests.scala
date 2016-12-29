@@ -78,6 +78,19 @@ class PrsFilterTests extends FunSuite {
     assert(message.equals("The zoneId parameter is invalid."))
   }
 
+  test("query not found") {
+    val result = PrsFilter.query(List[SifRequestParameter](
+      SifRequestParameter("authorizedEntityId", "1"),
+      SifRequestParameter("districtStudentId", "notfound"),
+      SifRequestParameter("externalServiceId", "2"),
+      SifRequestParameter("objectType", "sre"),
+      SifRequestParameter("personnelId", "3"),
+      SifRequestParameter("zoneId", "highline")
+    ))
+    assert(!result.success)
+    assert(result.statusCode == SifHttpStatusCode.NotFound)
+  }
+
   test("query valid") {
     val result = PrsFilter.query(List[SifRequestParameter](
       SifRequestParameter("authorizedEntityId", "1"),

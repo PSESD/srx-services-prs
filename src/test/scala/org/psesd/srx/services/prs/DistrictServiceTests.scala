@@ -173,9 +173,11 @@ class DistrictServiceTests extends FunSuite {
         <dataSets>
           <dataSet>
             <id>123</id>
+            <name>data set 123</name>
           </dataSet>
           <dataSet>
             <id>456</id>
+            <name>data set 456</name>
           </dataSet>
         </dataSets>
       </districtService>,
@@ -198,9 +200,11 @@ class DistrictServiceTests extends FunSuite {
         <dataSets>
           <dataSet>
             <id>789</id>
+            <name>data set 789</name>
           </dataSet>
           <dataSet>
             <id>456</id>
+            <name>data set 456</name>
           </dataSet>
         </dataSets>
       </districtService>,

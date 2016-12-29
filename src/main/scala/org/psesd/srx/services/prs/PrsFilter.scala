@@ -140,12 +140,16 @@ object PrsFilter extends PrsEntityService {
         )
         datasource.close()
         if (result.success) {
-          new PrsFilterResult(
-            SifRequestAction.Query,
-            SifHttpStatusCode.Ok,
-            result,
-            SrxResponseFormat.getResponseFormat(parameters)
-          )
+          if(result.rows.isEmpty) {
+            SrxResourceErrorResult(SifHttpStatusCode.NotFound, new Exception("Filters for student '%s' not found.".format(districtStudentId)))
+          } else {
+            new PrsFilterResult(
+              SifRequestAction.Query,
+              SifHttpStatusCode.Ok,
+              result,
+              SrxResponseFormat.getResponseFormat(parameters)
+            )
+          }
         } else {
           throw result.exceptions.head
         }

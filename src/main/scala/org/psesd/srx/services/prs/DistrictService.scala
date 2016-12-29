@@ -5,7 +5,7 @@ import java.sql.Date
 import org.json4s._
 import org.json4s.JsonDSL._
 import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
-import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult, SrxResponseFormat}
+import org.psesd.srx.shared.core._
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
@@ -150,6 +150,13 @@ object DistrictService extends PrsEntityService {
     requiresPersonnel,
     dataSets
   )
+
+  def apply(requestBody: SrxRequestBody, parameters: Option[List[SifRequestParameter]]): DistrictService = {
+    if (requestBody == null) {
+      throw new ArgumentNullException("requestBody parameter")
+    }
+    apply(requestBody.getXml.orNull, parameters)
+  }
 
   def apply(districtServiceXml: Node, parameters: Option[List[SifRequestParameter]]): DistrictService = {
     if (districtServiceXml == null) {
@@ -343,7 +350,7 @@ object DistrictService extends PrsEntityService {
       " district_service.initiation_date," +
       " district_service.expiration_date," +
       " district_service.requires_personnel," +
-      " district_service_data_set.data_set_id," +
+      " data_set.id data_set_id," +
       " data_set.name data_set_name," +
       " data_set.description data_set_description" +
       " from srx_services_prs.district_service" +
@@ -463,10 +470,10 @@ object DistrictService extends PrsEntityService {
       val dataSetId = row.getString("data_set_id")
       val districtService = districtServices.find(ds => ds.id.equals(id))
       if (districtService.isDefined) {
-        if(dataSetId.isDefined) {
+        if(dataSetId.isDefined && !dataSetId.get.isNullOrEmpty) {
           districtService.get.dataSets.get += DataSet(
             dataSetId.get.toInt,
-            row.getString("data_set_name"),
+            row.getString("data_set_name").orNull,
             row.getString("data_set_description"),
             None
           )
@@ -489,9 +496,9 @@ object DistrictService extends PrsEntityService {
           row.getString("expiration_date").getOrElse(""),
           row.getBoolean("requires_personnel").getOrElse(false),
           {
-            if(dataSetId.isDefined) Some(ArrayBuffer[DataSet](DataSet(
+            if(dataSetId.isDefined && !dataSetId.get.isNullOrEmpty) Some(ArrayBuffer[DataSet](DataSet(
               dataSetId.get.toInt,
-              row.getString("data_set_name"),
+              row.getString("data_set_name").orNull,
               row.getString("data_set_description"),
               None
             ))) else Some(ArrayBuffer[DataSet]())
