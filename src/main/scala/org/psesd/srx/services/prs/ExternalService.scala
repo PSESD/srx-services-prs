@@ -112,6 +112,10 @@ object ExternalService extends PrsEntityService {
 
       val datasource = new Datasource(datasourceConfig)
 
+      val e = externalService.authorizedEntityId
+      val n = externalService.name.orNull
+      val d = externalService.description.orNull
+
       val result = datasource.create(
         "insert into srx_services_prs.external_service (" +
           "id, authorized_entity_id, name, description) values (" +
@@ -124,6 +128,7 @@ object ExternalService extends PrsEntityService {
       )
 
       datasource.close()
+      val s = result.success
 
       if (result.success) {
         val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
