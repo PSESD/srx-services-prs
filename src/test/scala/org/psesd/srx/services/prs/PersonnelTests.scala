@@ -8,52 +8,53 @@ class PersonnelTests extends FunSuite {
 
   var createdId: Int = 0
 
+  val contact = new Contact(0, Some("jon"), Some("director"), Some("jon@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("jon.com"))
+  val authorizedEntity = AuthorizedEntity(0, "test", Some(contact))
+  val authorizedEntityResult = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
+
   test("constructor") {
     val id = 123
-    val authorizedEntityId = 456
     val firstName = "jon"
     val lastName = "snow"
-    val personnel = new Personnel(id, authorizedEntityId, Some(firstName), Some(lastName))
+    val personnel = new Personnel(id, authorizedEntityResult.getId, Some(firstName), Some(lastName))
     assert(personnel.id.equals(id))
-    assert(personnel.authorizedEntityId.equals(authorizedEntityId))
+    assert(personnel.authorizedEntityId.equals(authorizedEntityResult.getId))
     assert(personnel.firstName.get.equals(firstName))
     assert(personnel.lastName.get.equals(lastName))
   }
 
   test("factory") {
     val id = 123
-    val authorizedEntityId = 456
     val firstName = "jon"
     val lastName = "snow"
-    val personnel = Personnel(id, authorizedEntityId, Some(firstName), Some(lastName))
+    val personnel = Personnel(id, authorizedEntityResult.getId, Some(firstName), Some(lastName))
     assert(personnel.id.equals(id))
-    assert(personnel.authorizedEntityId.equals(authorizedEntityId))
+    assert(personnel.authorizedEntityId.equals(authorizedEntityResult.getId))
     assert(personnel.firstName.get.equals(firstName))
     assert(personnel.lastName.get.equals(lastName))
   }
 
   test("node") {
     val id = 123
-    val authorizedEntityId = 456
     val firstName = "jon"
     val lastName = "snow"
     val personnel = Personnel(
       <personnel>
         <id>{id}</id>
-        <authorizedEntityId>{authorizedEntityId}</authorizedEntityId>
+        <authorizedEntityId>{authorizedEntityResult.getId}</authorizedEntityId>
         <firstName>{firstName}</firstName>
         <lastName>{lastName}</lastName>
       </personnel>,
-      Some(List(SifRequestParameter("authorizedEntityId", authorizedEntityId.toString)))
+      Some(List(SifRequestParameter("authorizedEntityId", authorizedEntityResult.getId.toString)))
     )
     assert(personnel.id.equals(id))
-    assert(personnel.authorizedEntityId.equals(authorizedEntityId))
+    assert(personnel.authorizedEntityId.equals(authorizedEntityResult.getId))
     assert(personnel.firstName.get.equals(firstName))
     assert(personnel.lastName.get.equals(lastName))
   }
 
   test("create") {
-    val personnel = Personnel(0, 0, Some("jon"), Some("doe"))
+    val personnel = Personnel(0, authorizedEntityResult.getId, Some("jon"), Some("doe"))
     val result = Personnel.create(personnel, List[SifRequestParameter]()).asInstanceOf[PersonnelResult]
     createdId = result.getId
     assert(result.success)
@@ -62,7 +63,7 @@ class PersonnelTests extends FunSuite {
   }
 
   test("update id parameter") {
-    val personnel = Personnel(0, 0, Some("jonathan"), Some("doe"))
+    val personnel = Personnel(0, authorizedEntityResult.getId, Some("jonathan"), Some("doe"))
     val result = Personnel.update(personnel, List[SifRequestParameter](SifRequestParameter("id", createdId.toString)))
     assert(result.success)
     assert(result.exceptions.isEmpty)

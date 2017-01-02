@@ -221,6 +221,7 @@ object DistrictService extends PrsEntityService {
         districtService.getInitiationDate,
         districtService.getExpirationDate
       )
+
       if(result.success && districtService.dataSets.isDefined) {
         val districtServiceId = result.id.get.toInt
         for (ds <- districtService.dataSets.get) {
@@ -233,6 +234,10 @@ object DistrictService extends PrsEntityService {
             districtServiceId,
             ds.id
           )
+
+          val dsi = districtServiceId
+          val dsid = ds.id
+
           if (!dsResult.success) {
             throw dsResult.exceptions.head
           }
@@ -402,6 +407,7 @@ object DistrictService extends PrsEntityService {
           districtService.getExpirationDate,
           id.get
         )
+
         if(result.success && districtService.dataSets.isDefined) {
           val districtServiceId = id.get
           val deleteSql = new StringBuilder("delete from srx_services_prs.district_service_data_set where district_service_id = ? and data_set_id not in (")
@@ -414,6 +420,7 @@ object DistrictService extends PrsEntityService {
               districtServiceId,
               dataSet.id
             )
+
             if (!dsResult.success) {
               throw dsResult.exceptions.head
             }

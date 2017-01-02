@@ -257,7 +257,15 @@ class PrsServerTests extends FunSuite {
 
   test("create personnel") {
     if (Environment.isLocal) {
-      val authorizedEntityId: Int = 0
+      val authorizedEntityResource = PrsResource.AuthorizedEntities.toString
+      val authorizedEntity = AuthorizedEntity(1, "test", None)
+      val authorizedEntitySifRequest = new SifRequest(TestValues.sifProvider, authorizedEntityResource)
+      authorizedEntitySifRequest.generatorId = Some(TestValues.generatorId)
+      authorizedEntitySifRequest.body = Some(authorizedEntity.toXml.toXmlString)
+      println("CREATE RESOURCE: %s".format(authorizedEntityResource))
+      val authorizedEntityResponse = new SifConsumer().create(authorizedEntitySifRequest)
+
+      val authorizedEntityId: Int = authorizedEntity.id
       val resource = "%s/%s/%s".format(PrsResource.AuthorizedEntities.toString, authorizedEntityId.toString, PrsResource.Personnel.toString)
       val personnel = Personnel(0, authorizedEntityId, Some("jon"), Some("doe"))
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
@@ -266,6 +274,7 @@ class PrsServerTests extends FunSuite {
       println("CREATE RESOURCE: %s".format(resource))
       val response = new SifConsumer().create(sifRequest)
       printlnResponse(response)
+      val xml = response.getBodyXml
       personnelId = (response.getBodyXml.get \ "creates" \ "create" \ "@id").text.toInt
       assert(response.statusCode.equals(SifHttpStatusCode.Created))
     }
@@ -273,7 +282,15 @@ class PrsServerTests extends FunSuite {
 
   test("query personnel by id") {
     if (Environment.isLocal) {
-      val authorizedEntityId: Int = 0
+      val authorizedEntityResource = PrsResource.AuthorizedEntities.toString
+      val authorizedEntity = AuthorizedEntity(1, "test", None)
+      val authorizedEntitySifRequest = new SifRequest(TestValues.sifProvider, authorizedEntityResource)
+      authorizedEntitySifRequest.generatorId = Some(TestValues.generatorId)
+      authorizedEntitySifRequest.body = Some(authorizedEntity.toXml.toXmlString)
+      println("CREATE RESOURCE: %s".format(authorizedEntityResource))
+      val authorizedEntityResponse = new SifConsumer().create(authorizedEntitySifRequest)
+
+      val authorizedEntityId: Int = authorizedEntity.id
       val resource = "%s/%s/%s/%s".format(PrsResource.AuthorizedEntities.toString, authorizedEntityId.toString, PrsResource.Personnel.toString, personnelId.toString)
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.generatorId = Some(TestValues.generatorId)

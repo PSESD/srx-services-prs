@@ -8,6 +8,31 @@ class DistrictServicePersonnelTests extends FunSuite {
 
   var createdId: Int = 0
 
+  val districtContact = new Contact(0, Some("jon"), Some("director"), Some("jon@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("jon.com"))
+  val district = District(0, "test", None, None, Some(districtContact))
+  val districtResult = District.create(district, List[SifRequestParameter]()).asInstanceOf[DistrictResult]
+
+  val authorizedEntityContact = new Contact(0, Some("jon"), Some("director"), Some("jon@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("jon.com"))
+  val authorizedEntity = AuthorizedEntity(0, "test", Some(authorizedEntityContact))
+  val authorizedEntityResult = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
+
+  val externalService = ExternalService(0, authorizedEntityResult.getId, Some("test"), Some("test service description"))
+  val externalServiceResult = ExternalService.create(externalService, List[SifRequestParameter]()).asInstanceOf[ExternalServiceResult]
+
+  val districtService = DistrictService(
+    <districtService>
+      <externalServiceId>{externalServiceResult.getId}</externalServiceId>
+      <initiationDate>2016-01-01</initiationDate>
+      <expirationDate>2017-01-01</expirationDate>
+      <requiresPersonnel>true</requiresPersonnel>
+    </districtService>,
+    Some(List[SifRequestParameter](SifRequestParameter("districtId", {districtResult.getId.toString})))
+  )
+  val districtServiceResult = DistrictService.create(districtService, List[SifRequestParameter]()).asInstanceOf[DistrictServiceResult]
+
+  val personnel = Personnel(0, authorizedEntityResult.getId, Some("jon"), Some("doe"))
+  val personnelResult = Personnel.create(personnel, List[SifRequestParameter]()).asInstanceOf[PersonnelResult]
+
   test("constructor") {
     val id = 123
     val districtServiceId = 456
@@ -53,8 +78,8 @@ class DistrictServicePersonnelTests extends FunSuite {
   }
 
   test("create") {
-    val districtServiceId = 456
-    val personnelId = 789
+    val districtServiceId = districtServiceResult.getId
+    val personnelId = personnelResult.getId
     val role = "test role"
     val districtServicePersonnel = DistrictServicePersonnel(
       <districtServicePersonnel>
@@ -72,8 +97,8 @@ class DistrictServicePersonnelTests extends FunSuite {
   }
 
   test("update id parameter") {
-    val districtServiceId = 654
-    val personnelId = 987
+    val districtServiceId = districtServiceResult.getId
+    val personnelId = personnelResult.getId
     val role = "test role UPDATED"
     val districtServicePersonnel = DistrictServicePersonnel(
       <districtServicePersonnel>
@@ -105,13 +130,27 @@ class DistrictServicePersonnelTests extends FunSuite {
   }
 
   test("query by id") {
+    val districtServiceId = districtServiceResult.getId
+    val personnelId = personnelResult.getId
+    val role = "test role"
+    val districtServicePersonnel = DistrictServicePersonnel(
+      <districtServicePersonnel>
+        <districtServiceId>{districtServiceId.toString}</districtServiceId>
+        <personnelId>{personnelId.toString}</personnelId>
+        <role>{role}</role>
+      </districtServicePersonnel>,
+      None
+    )
+    val districtServicePersonnelResult = DistrictServicePersonnel.create(districtServicePersonnel, List[SifRequestParameter]()).asInstanceOf[DistrictServicePersonnelResult]
+    createdId = districtServicePersonnelResult.getId
+
     val result = DistrictServicePersonnel.query(List[SifRequestParameter](SifRequestParameter("id", createdId.toString)))
     assert(result.success)
     assert(result.statusCode == SifHttpStatusCode.Ok)
     val resultBody = result.toJson.get.toJsonString
-    assert(resultBody.contains("654"))
-    assert(resultBody.contains("987"))
-    assert(resultBody.contains("test role UPDATED"))
+    assert(resultBody.contains(districtServiceId.toString))
+    assert(resultBody.contains(personnelId.toString))
+    assert(resultBody.contains("test role"))
   }
 
   test("query all") {

@@ -8,9 +8,31 @@ class ConsentTests extends FunSuite {
 
   var createdId: Int = 0
 
+  val districtContact = new Contact(0, Some("jon"), Some("director"), Some("jon@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("jon.com"))
+  val district = District(0, "test", None, None, Some(districtContact))
+  val districtResult = District.create(district, List[SifRequestParameter]()).asInstanceOf[DistrictResult]
+
+  val authorizedEntityContact = new Contact(0, Some("jon"), Some("director"), Some("jon@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("jon.com"))
+  val authorizedEntity = AuthorizedEntity(0, "test", Some(authorizedEntityContact))
+  val authorizedEntityResult = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
+
+  val externalService = ExternalService(0, authorizedEntityResult.getId, Some("test"), Some("test service description"))
+  val externalServiceResult = ExternalService.create(externalService, List[SifRequestParameter]()).asInstanceOf[ExternalServiceResult]
+
+  val districtService = DistrictService(
+    <districtService>
+      <externalServiceId>{externalServiceResult.getId}</externalServiceId>
+      <initiationDate>2016-01-01</initiationDate>
+      <expirationDate>2017-01-01</expirationDate>
+      <requiresPersonnel>true</requiresPersonnel>
+    </districtService>,
+    Some(List[SifRequestParameter](SifRequestParameter("districtId", {districtResult.getId.toString})))
+  )
+  val districtServiceResult = DistrictService.create(districtService, List[SifRequestParameter]()).asInstanceOf[DistrictServiceResult]
+
   test("constructor") {
     val id = 123
-    val districtServiceId = 456
+    val districtServiceId = districtServiceResult.getId
     val consentType = "test type"
     val startDate = "2016-01-01"
     val endDate = "2017-01-01"
@@ -24,7 +46,7 @@ class ConsentTests extends FunSuite {
 
   test("factory") {
     val id = 123
-    val districtServiceId = 456
+    val districtServiceId = districtServiceResult.getId
     val consentType = "test type"
     val startDate = "2016-01-01"
     val endDate = "2017-01-01"
@@ -38,7 +60,7 @@ class ConsentTests extends FunSuite {
 
   test("node") {
     val id = 123
-    val districtServiceId = 456
+    val districtServiceId = districtServiceResult.getId
     val consentType = "test type"
     val startDate = "2016-01-01"
     val endDate = "2017-01-01"
@@ -59,7 +81,7 @@ class ConsentTests extends FunSuite {
   }
 
   test("create") {
-    val districtServiceId = 456
+    val districtServiceId = districtServiceResult.getId
     val consent = Consent(
       <consent>
         <consentType>test type</consentType>
@@ -76,7 +98,7 @@ class ConsentTests extends FunSuite {
   }
 
   test("update id parameter") {
-    val districtServiceId = 456
+    val districtServiceId = districtServiceResult.getId
     val consent = Consent(
       <consent>
         <consentType>test type UPDATED</consentType>
