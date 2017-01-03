@@ -4,13 +4,19 @@ import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestParameter}
 import org.scalatest.FunSuite
 
+import scala.collection.mutable.ArrayBuffer
+
 class DataObjectTests extends FunSuite {
 
   var createdId: Int = 0
 
+  val dataobjects = ArrayBuffer[DataObject](DataObject(0, 0, "test object", "test type", "test include"))
+  val dataSet = DataSet(0, "sre", Some("firstName"), Some(dataobjects))
+  val dataSetResult = DataSet.create(dataSet, List[SifRequestParameter]()).asInstanceOf[DataSetResult]
+
   test("constructor") {
     val id = 123
-    val dataSetId = 456
+    val dataSetId = dataSetResult.getId
     val name = "test name"
     val filterType = "test filter"
     val includeStatement = "test include"
@@ -24,7 +30,7 @@ class DataObjectTests extends FunSuite {
 
   test("factory") {
     val id = 123
-    val dataSetId = 456
+    val dataSetId = dataSetResult.getId
     val name = "test name"
     val filterType = "test filter"
     val includeStatement = "test include"
@@ -38,7 +44,7 @@ class DataObjectTests extends FunSuite {
 
   test("node") {
     val id = 123
-    val dataSetId = 456
+    val dataSetId = dataSetResult.getId
     val name = "test name"
     val filterType = "test filter"
     val includeStatement = "test include"
@@ -60,20 +66,18 @@ class DataObjectTests extends FunSuite {
   }
 
   test("create") {
-    val dataSetId = 456
+    val dataSetId = dataSetResult.getId
     val name = "test name"
     val filterType = "test filter"
     val includeStatement = "test include"
     val dataObject = DataObject(0, dataSetId, name, filterType, includeStatement)
     val result = DataObject.create(dataObject, List[SifRequestParameter]()).asInstanceOf[DataObjectResult]
-    createdId = result.getId
     assert(result.success)
     assert(result.exceptions.isEmpty)
-    assert(result.toXml.get.toXmlString.contains("id=\"%s\"".format(createdId.toString)))
   }
 
   test("update id parameter") {
-    val dataSetId = 654
+    val dataSetId = dataSetResult.getId
     val name = "test name UPDATED"
     val filterType = "test filter UPDATED"
     val includeStatement = "test include UPDATED"
@@ -100,18 +104,25 @@ class DataObjectTests extends FunSuite {
   }
 
   test("query by id") {
-    val result = DataObject.query(List[SifRequestParameter](SifRequestParameter("id", createdId.toString)))
+    val dataSetId = dataSetResult.getId
+    val name = "test name"
+    val filterType = "test filter"
+    val includeStatement = "test include"
+    val dataObject = DataObject(0, dataSetId, name, filterType, includeStatement)
+    val dataObjectResult = DataObject.create(dataObject, List[SifRequestParameter]()).asInstanceOf[DataObjectResult]
+
+    val result = DataObject.query(List[SifRequestParameter](SifRequestParameter("id", dataObjectResult.getId.toString)))
     assert(result.success)
     assert(result.statusCode == SifHttpStatusCode.Ok)
     val resultBody = result.toJson.get.toJsonString
-    assert(resultBody.contains("654"))
-    assert(resultBody.contains("test name UPDATED"))
-    assert(resultBody.contains("test filter UPDATED"))
-    assert(resultBody.contains("test include UPDATED"))
+    assert(resultBody.contains(dataSetResult.getId.toString))
+    assert(resultBody.contains("test name"))
+    assert(resultBody.contains("test filter"))
+    assert(resultBody.contains("test include"))
   }
 
   test("query all") {
-    val result = DataObject.query(List[SifRequestParameter](SifRequestParameter("dataSetId", "654")))
+    val result = DataObject.query(List[SifRequestParameter](SifRequestParameter("dataSetId", dataSetResult.getId.toString)))
     assert(result.success)
     assert(result.statusCode == SifHttpStatusCode.Ok)
     assert(result.toXml.nonEmpty)

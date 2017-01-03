@@ -8,52 +8,53 @@ class ExternalServiceTests extends FunSuite {
 
   var createdId: Int = 0
 
+  val contact = new Contact(0, Some("jon"), Some("director"), Some("jon@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("jon.com"))
+  val authorizedEntity = AuthorizedEntity(0, "test", Some(contact))
+  val authorizedEntityResult = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
+
   test("constructor") {
     val id = 123
-    val authorizedEntityId = 456
     val name = "test service"
     val description = "test service description"
-    val externalService = new ExternalService(id, authorizedEntityId, Some(name), Some(description))
+    val externalService = new ExternalService(id, authorizedEntityResult.getId, Some(name), Some(description))
     assert(externalService.id.equals(id))
-    assert(externalService.authorizedEntityId.equals(authorizedEntityId))
+    assert(externalService.authorizedEntityId.equals(authorizedEntityResult.getId))
     assert(externalService.name.get.equals(name))
     assert(externalService.description.get.equals(description))
   }
 
   test("factory") {
     val id = 123
-    val authorizedEntityId = 456
     val name = "test service"
     val description = "test service description"
-    val externalService = ExternalService(id, authorizedEntityId, Some(name), Some(description))
+    val externalService = ExternalService(id, authorizedEntityResult.getId, Some(name), Some(description))
     assert(externalService.id.equals(id))
-    assert(externalService.authorizedEntityId.equals(authorizedEntityId))
+    assert(externalService.authorizedEntityId.equals(authorizedEntityResult.getId))
     assert(externalService.name.get.equals(name))
     assert(externalService.description.get.equals(description))
   }
 
   test("node") {
     val id = 123
-    val authorizedEntityId = 456
     val name = "test service"
     val description = "test service description"
     val externalService = ExternalService(
       <externalService>
         <id>{id}</id>
-        <authorizedEntityId>{authorizedEntityId}</authorizedEntityId>
+        <authorizedEntityId>{authorizedEntityResult.getId}</authorizedEntityId>
         <externalServiceName>{name}</externalServiceName>
         <externalServiceDescription>{description}</externalServiceDescription>
       </externalService>,
-      Some(List(SifRequestParameter("authorizedEntityId", authorizedEntityId.toString)))
+      Some(List(SifRequestParameter("authorizedEntityId", authorizedEntityResult.getId.toString)))
     )
     assert(externalService.id.equals(id))
-    assert(externalService.authorizedEntityId.equals(authorizedEntityId))
+    assert(externalService.authorizedEntityId.equals(authorizedEntityResult.getId))
     assert(externalService.name.get.equals(name))
     assert(externalService.description.get.equals(description))
   }
 
   test("create") {
-    val externalService = ExternalService(0, 0, Some("test"), Some("test service description"))
+    val externalService = ExternalService(0, authorizedEntityResult.getId, Some("test"), Some("test service description"))
     val result = ExternalService.create(externalService, List[SifRequestParameter]()).asInstanceOf[ExternalServiceResult]
     createdId = result.getId
     assert(result.success)
@@ -62,7 +63,7 @@ class ExternalServiceTests extends FunSuite {
   }
 
   test("update id parameter") {
-    val externalService = ExternalService(0, 0, Some("test UPDATED"), Some("test service description UPDATED"))
+    val externalService = ExternalService(0, authorizedEntityResult.getId, Some("test UPDATED"), Some("test service description UPDATED"))
     val result = ExternalService.update(externalService, List[SifRequestParameter](SifRequestParameter("id", createdId.toString)))
     assert(result.success)
     assert(result.exceptions.isEmpty)
