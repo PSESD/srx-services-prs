@@ -93,8 +93,7 @@ class PrsServerTests extends FunSuite {
     }
   }
 
-
-  /* AUTHORIZED ENTITY ROUTES */
+  /* CREATE */
 
   var authorizedEntityIdXml: Int = 0
   var authorizedEntityIdJson: Int = 0
@@ -106,9 +105,9 @@ class PrsServerTests extends FunSuite {
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.generatorId = Some(TestValues.generatorId)
       sifRequest.body = Some(authorizedEntity.toXml.toXmlString)
-      println("CREATE RESOURCE: %s".format(resource))
+      // println("CREATE RESOURCE: %s".format(resource))
       val response = new SifConsumer().create(sifRequest)
-      printlnResponse(response)
+      // printlnResponse(response)
       authorizedEntityIdXml = (response.getBodyXml.get \ "creates" \ "create" \ "@id").text.toInt
       assert(response.statusCode.equals(SifHttpStatusCode.Created))
     }
@@ -123,9 +122,9 @@ class PrsServerTests extends FunSuite {
       sifRequest.contentType = Some(SifContentType.Json)
       sifRequest.generatorId = Some(TestValues.generatorId)
       sifRequest.body = Some(authorizedEntity.toXml.toJsonString)
-      println("CREATE RESOURCE: %s".format(resource))
+      // println("CREATE RESOURCE: %s".format(resource))
       val response = new SifConsumer().create(sifRequest)
-      printlnResponse(response)
+      // printlnResponse(response)
       authorizedEntityIdJson = (response.getBodyXml.get \ "creates" \ "id").text.toInt
       assert(response.statusCode.equals(SifHttpStatusCode.Created))
     }
@@ -137,7 +136,7 @@ class PrsServerTests extends FunSuite {
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.body = Some("")
       val thrown = intercept[ArgumentInvalidException] {
-        println("CREATE RESOURCE: %s".format(resource))
+        // println("CREATE RESOURCE: %s".format(resource))
         SifConsumer().create(sifRequest)
       }
       assert(thrown.getMessage.equals(ExceptionMessage.IsInvalid.format("request body")))
@@ -150,9 +149,9 @@ class PrsServerTests extends FunSuite {
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.generatorId = Some(TestValues.generatorId)
       sifRequest.body = Some(<notAnEntity/>.toString)
-      println("CREATE RESOURCE: %s".format(resource))
+      // println("CREATE RESOURCE: %s".format(resource))
       val response = new SifConsumer().create(sifRequest)
-      printlnResponse(response)
+      // printlnResponse(response)
       assert(response.statusCode.equals(SifHttpStatusCode.BadRequest))
       assert((response.getBodyXml.get \ "description").text == "The root element 'notAnEntity' is invalid.")
     }
@@ -164,271 +163,53 @@ class PrsServerTests extends FunSuite {
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.generatorId = Some(TestValues.generatorId)
       sifRequest.body = Some(<authorizedEntity><invalidField/></authorizedEntity>.toString)
-      println("CREATE RESOURCE: %s".format(resource))
+      // println("CREATE RESOURCE: %s".format(resource))
       val response = new SifConsumer().create(sifRequest)
-      printlnResponse(response)
+      // printlnResponse(response)
       assert(response.statusCode.equals(SifHttpStatusCode.BadRequest))
       assert((response.getBodyXml.get \ "description").text == "The authorizedEntity.name cannot be null, empty, or whitespace.")
     }
   }
 
-  test("update authorized entity empty body") {
-    if (Environment.isLocal) {
-      val resource = PrsResource.AuthorizedEntities.toString
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.body = Some("")
-      val thrown = intercept[ArgumentInvalidException] {
-        println("UPDATE RESOURCE: %s".format(resource))
-        SifConsumer().update(sifRequest)
-      }
-      assert(thrown.getMessage.equals(ExceptionMessage.IsInvalid.format("request body")))
-    }
-  }
-
-  test("query authorized entity by id") {
-    if (Environment.isLocal) {
-      val resource = PrsResource.AuthorizedEntities.toString + "/" + authorizedEntityIdXml.toString
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      println("QUERY RESOURCE: %s".format(resource))
-      val response = new SifConsumer().query(sifRequest)
-      printlnResponse(response)
-      val authorizedEntity = AuthorizedEntity((response.getBodyXml.get \ "authorizedEntity").head , None)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-      assert(authorizedEntity.id.equals(authorizedEntityIdXml))
-      assert(authorizedEntity.name.equals("test"))
-    }
-  }
-
-  test("update authorized entity") {
-    if (Environment.isLocal) {
-      val resource = "%s/%s".format(PrsResource.AuthorizedEntities.toString, authorizedEntityIdXml.toString)
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      sifRequest.body = Some(AuthorizedEntity(authorizedEntityIdXml, "test UPDATED", None).toXml.toXmlString)
-      println("UPDATE RESOURCE: %s".format(resource))
-      val response = new SifConsumer().update(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-  test("query authorized entity all") {
-    if (Environment.isLocal) {
-      val resource = PrsResource.AuthorizedEntities.toString
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      sifRequest.accept = Some(SifContentType.Json)
-      println("QUERY RESOURCE: %s".format(resource))
-      val response = new SifConsumer().query(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-  test("delete authorized entity xml") {
-    if (Environment.isLocal) {
-      val resource = PrsResource.AuthorizedEntities.toString + "/" + authorizedEntityIdXml.toString
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      println("DELETE RESOURCE: %s".format(resource))
-      val response = new SifConsumer().delete(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-  test("delete authorized entity json") {
-    if (Environment.isLocal) {
-      val resource = PrsResource.AuthorizedEntities.toString + "/" + authorizedEntityIdJson.toString
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      println("DELETE RESOURCE: %s".format(resource))
-      val response = new SifConsumer().delete(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-
-  /* PERSONNEL ROUTES */
 
   var personnelId: Int = 0
 
   test("create personnel") {
     if (Environment.isLocal) {
-      val authorizedEntityResource = PrsResource.AuthorizedEntities.toString
-      val authorizedEntity = AuthorizedEntity(1, "test", None)
-      val authorizedEntitySifRequest = new SifRequest(TestValues.sifProvider, authorizedEntityResource)
-      authorizedEntitySifRequest.generatorId = Some(TestValues.generatorId)
-      authorizedEntitySifRequest.body = Some(authorizedEntity.toXml.toXmlString)
-      println("CREATE RESOURCE: %s".format(authorizedEntityResource))
-      val authorizedEntityResponse = new SifConsumer().create(authorizedEntitySifRequest)
-
-      val authorizedEntityId: Int = authorizedEntity.id
+      val authorizedEntityId: Int = authorizedEntityIdJson
       val resource = "%s/%s/%s".format(PrsResource.AuthorizedEntities.toString, authorizedEntityId.toString, PrsResource.Personnel.toString)
       val personnel = Personnel(0, authorizedEntityId, Some("jon"), Some("doe"))
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.generatorId = Some(TestValues.generatorId)
       sifRequest.body = Some(personnel.toXml.toXmlString)
-      println("CREATE RESOURCE: %s".format(resource))
+      // println("CREATE RESOURCE: %s".format(resource))
       val response = new SifConsumer().create(sifRequest)
-      printlnResponse(response)
+      // printlnResponse(response)
       val xml = response.getBodyXml
       personnelId = (response.getBodyXml.get \ "creates" \ "create" \ "@id").text.toInt
       assert(response.statusCode.equals(SifHttpStatusCode.Created))
     }
   }
 
-  test("query personnel by id") {
-    if (Environment.isLocal) {
-      val authorizedEntityResource = PrsResource.AuthorizedEntities.toString
-      val authorizedEntity = AuthorizedEntity(1, "test", None)
-      val authorizedEntitySifRequest = new SifRequest(TestValues.sifProvider, authorizedEntityResource)
-      authorizedEntitySifRequest.generatorId = Some(TestValues.generatorId)
-      authorizedEntitySifRequest.body = Some(authorizedEntity.toXml.toXmlString)
-      println("CREATE RESOURCE: %s".format(authorizedEntityResource))
-      val authorizedEntityResponse = new SifConsumer().create(authorizedEntitySifRequest)
-
-      val authorizedEntityId: Int = authorizedEntity.id
-      val resource = "%s/%s/%s/%s".format(PrsResource.AuthorizedEntities.toString, authorizedEntityId.toString, PrsResource.Personnel.toString, personnelId.toString)
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      println("QUERY RESOURCE: %s".format(resource))
-      val response = new SifConsumer().query(sifRequest)
-      printlnResponse(response)
-      val personnel = Personnel((response.getBodyXml.get \ "personnel").head , Some(List(SifRequestParameter("authorizedEntityId", authorizedEntityId.toString))))
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-      assert(personnel.id.equals(personnelId))
-      assert(personnel.authorizedEntityId.equals(authorizedEntityId))
-      assert(personnel.firstName.get.equals("jon"))
-      assert(personnel.lastName.get.equals("doe"))
-    }
-  }
-
-  test("update personnel") {
-    if (Environment.isLocal) {
-      val authorizedEntityId: Int = 0
-      val resource = "%s/%s/%s/%s".format(PrsResource.AuthorizedEntities.toString, authorizedEntityId.toString, PrsResource.Personnel.toString, personnelId.toString)
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      sifRequest.body = Some(Personnel(personnelId, authorizedEntityId, Some("jon UPDATED"), Some("jon UPDATED")).toXml.toXmlString)
-      println("UPDATE RESOURCE: %s".format(resource))
-      val response = new SifConsumer().update(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-  test("query personnel all") {
-    if (Environment.isLocal) {
-      val authorizedEntityId: Int = 0
-      val resource = "%s/%s/%s".format(PrsResource.AuthorizedEntities.toString, authorizedEntityId.toString, PrsResource.Personnel.toString)
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      sifRequest.accept = Some(SifContentType.Json)
-      println("QUERY RESOURCE: %s".format(resource))
-      val response = new SifConsumer().query(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-  test("delete personnel") {
-    if (Environment.isLocal) {
-      val authorizedEntityId: Int = 0
-      val resource = "%s/%s/%s/%s".format(PrsResource.AuthorizedEntities.toString, authorizedEntityId.toString, PrsResource.Personnel.toString, personnelId.toString)
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      println("DELETE RESOURCE: %s".format(resource))
-      val response = new SifConsumer().delete(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-
-  /* EXTERNAL SERVICE ROUTES */
 
   var externalServiceId: Int = 0
 
   test("create external service") {
     if (Environment.isLocal) {
-      val authorizedEntityId: Int = 0
+      val authorizedEntityId: Int = authorizedEntityIdJson
       val resource = "%s/%s/%s".format(PrsResource.AuthorizedEntities.toString, authorizedEntityId.toString, PrsResource.ExternalServices.toString)
       val externalService = ExternalService(0, authorizedEntityId, Some("test service"), Some("test service description"))
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.generatorId = Some(TestValues.generatorId)
       sifRequest.body = Some(externalService.toXml.toXmlString)
-      println("CREATE RESOURCE: %s".format(resource))
+      // println("CREATE RESOURCE: %s".format(resource))
       val response = new SifConsumer().create(sifRequest)
-      printlnResponse(response)
+      // printlnResponse(response)
       externalServiceId = (response.getBodyXml.get \ "creates" \ "create" \ "@id").text.toInt
       assert(response.statusCode.equals(SifHttpStatusCode.Created))
     }
   }
 
-  test("query external service by id") {
-    if (Environment.isLocal) {
-      val authorizedEntityId: Int = 0
-      val resource = "%s/%s/%s/%s".format(PrsResource.AuthorizedEntities.toString, authorizedEntityId.toString, PrsResource.ExternalServices.toString, externalServiceId.toString)
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      println("QUERY RESOURCE: %s".format(resource))
-      val response = new SifConsumer().query(sifRequest)
-      printlnResponse(response)
-      val externalService = ExternalService((response.getBodyXml.get \ "externalService").head , Some(List(SifRequestParameter("authorizedEntityId", authorizedEntityId.toString))))
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-      assert(externalService.id.equals(externalServiceId))
-      assert(externalService.authorizedEntityId.equals(authorizedEntityId))
-      assert(externalService.name.get.equals("test service"))
-      assert(externalService.description.get.equals("test service description"))
-    }
-  }
-
-  test("update external service") {
-    if (Environment.isLocal) {
-      val authorizedEntityId: Int = 0
-      val resource = "%s/%s/%s/%s".format(PrsResource.AuthorizedEntities.toString, authorizedEntityId.toString, PrsResource.ExternalServices.toString, externalServiceId.toString)
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      sifRequest.body = Some(ExternalService(externalServiceId, authorizedEntityId, Some("test service UPDATED"), Some("test service description UPDATED")).toXml.toXmlString)
-      println("UPDATE RESOURCE: %s".format(resource))
-      val response = new SifConsumer().update(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-  test("query external service all") {
-    if (Environment.isLocal) {
-      val authorizedEntityId: Int = 0
-      val resource = "%s/%s/%s".format(PrsResource.AuthorizedEntities.toString, authorizedEntityId.toString, PrsResource.ExternalServices.toString)
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      sifRequest.accept = Some(SifContentType.Json)
-      println("QUERY RESOURCE: %s".format(resource))
-      val response = new SifConsumer().query(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-  test("delete external service") {
-    if (Environment.isLocal) {
-      val authorizedEntityId: Int = 0
-      val resource = "%s/%s/%s/%s".format(PrsResource.AuthorizedEntities.toString, authorizedEntityId.toString, PrsResource.ExternalServices.toString, externalServiceId.toString)
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      println("DELETE RESOURCE: %s".format(resource))
-      val response = new SifConsumer().delete(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-
-  /* DISTRICT ROUTES */
 
   var districtId: Int = 0
 
@@ -439,9 +220,9 @@ class PrsServerTests extends FunSuite {
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.generatorId = Some(TestValues.generatorId)
       sifRequest.body = Some(district.toXml.toXmlString)
-      println("CREATE RESOURCE: %s".format(resource))
+      // println("CREATE RESOURCE: %s".format(resource))
       val response = new SifConsumer().create(sifRequest)
-      printlnResponse(response)
+      // printlnResponse(response)
       districtId = (response.getBodyXml.get \ "creates" \ "create" \ "@id").text.toInt
       assert(response.statusCode.equals(SifHttpStatusCode.Created))
     }
@@ -453,7 +234,7 @@ class PrsServerTests extends FunSuite {
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.body = Some("")
       val thrown = intercept[ArgumentInvalidException] {
-        println("CREATE RESOURCE: %s".format(resource))
+        // println("CREATE RESOURCE: %s".format(resource))
         SifConsumer().create(sifRequest)
       }
       assert(thrown.getMessage.equals(ExceptionMessage.IsInvalid.format("request body")))
@@ -466,9 +247,9 @@ class PrsServerTests extends FunSuite {
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.generatorId = Some(TestValues.generatorId)
       sifRequest.body = Some(<notAnEntity/>.toString)
-      println("CREATE RESOURCE: %s".format(resource))
+      // println("CREATE RESOURCE: %s".format(resource))
       val response = new SifConsumer().create(sifRequest)
-      printlnResponse(response)
+      //printlnResponse(response)
       assert(response.statusCode.equals(SifHttpStatusCode.BadRequest))
       assert((response.getBodyXml.get \ "description").text == "The root element 'notAnEntity' is invalid.")
     }
@@ -480,82 +261,14 @@ class PrsServerTests extends FunSuite {
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.generatorId = Some(TestValues.generatorId)
       sifRequest.body = Some(<district><invalidField/></district>.toString)
-      println("CREATE RESOURCE: %s".format(resource))
+      // println("CREATE RESOURCE: %s".format(resource))
       val response = new SifConsumer().create(sifRequest)
-      printlnResponse(response)
+      // printlnResponse(response)
       assert(response.statusCode.equals(SifHttpStatusCode.BadRequest))
       assert((response.getBodyXml.get \ "description").text == "The district.name cannot be null, empty, or whitespace.")
     }
   }
 
-  test("update district empty body") {
-    if (Environment.isLocal) {
-      val resource = PrsResource.Districts.toString
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.body = Some("")
-      val thrown = intercept[ArgumentInvalidException] {
-        println("UPDATE RESOURCE: %s".format(resource))
-        SifConsumer().update(sifRequest)
-      }
-      assert(thrown.getMessage.equals(ExceptionMessage.IsInvalid.format("request body")))
-    }
-  }
-
-  test("query district by id") {
-    if (Environment.isLocal) {
-      val resource = PrsResource.Districts.toString + "/" + districtId.toString
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      println("QUERY RESOURCE: %s".format(resource))
-      val response = new SifConsumer().query(sifRequest)
-      printlnResponse(response)
-      val district = District((response.getBodyXml.get \ "district").head , None)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-      assert(district.id.equals(districtId))
-      assert(district.name.equals("test"))
-    }
-  }
-
-  test("update district") {
-    if (Environment.isLocal) {
-      val resource = "%s/%s".format(PrsResource.Districts.toString, districtId.toString)
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      sifRequest.body = Some(District(districtId, "test UPDATED", None, None, None).toXml.toXmlString)
-      println("UPDATE RESOURCE: %s".format(resource))
-      val response = new SifConsumer().update(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-  test("query district all") {
-    if (Environment.isLocal) {
-      val resource = PrsResource.Districts.toString
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      sifRequest.accept = Some(SifContentType.Json)
-      println("QUERY RESOURCE: %s".format(resource))
-      val response = new SifConsumer().query(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-  test("delete district") {
-    if (Environment.isLocal) {
-      val resource = PrsResource.Districts.toString + "/" + districtId.toString
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      println("DELETE RESOURCE: %s".format(resource))
-      val response = new SifConsumer().delete(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-
-  /* DISTRICT SERVICE ROUTES */
 
   var districtServiceId: Int = 0
 
@@ -564,7 +277,7 @@ class PrsServerTests extends FunSuite {
       val resource = "%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.ExternalServices.toString)
       val districtService = DistrictService(
         <districtService>
-          <externalServiceId>456</externalServiceId>
+          <externalServiceId>{externalServiceId}</externalServiceId>
           <initiationDate>2016-01-01</initiationDate>
           <expirationDate>2017-01-01</expirationDate>
           <requiresPersonnel>true</requiresPersonnel>
@@ -574,69 +287,14 @@ class PrsServerTests extends FunSuite {
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.generatorId = Some(TestValues.generatorId)
       sifRequest.body = Some(districtService.toXml.toXmlString)
-      println("CREATE RESOURCE: %s".format(resource))
+      // println("CREATE RESOURCE: %s".format(resource))
       val response = new SifConsumer().create(sifRequest)
-      printlnResponse(response)
+      // printlnResponse(response)
       districtServiceId = (response.getBodyXml.get \ "creates" \ "create" \ "@id").text.toInt
       assert(response.statusCode.equals(SifHttpStatusCode.Created))
     }
   }
 
-  test("query district service by id") {
-    if (Environment.isLocal) {
-      val resource = "%s/%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.ExternalServices.toString, districtServiceId.toString)
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      println("QUERY RESOURCE: %s".format(resource))
-      val response = new SifConsumer().query(sifRequest)
-      printlnResponse(response)
-      val districtService = DistrictService((response.getBodyXml.get \ "districtService").head , Some(List(SifRequestParameter("districtId", districtId.toString))))
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-      assert(districtService.id.equals(districtServiceId))
-      assert(districtService.districtId.equals(districtId))
-      assert(districtService.initiationDate.equals("2016-01-01"))
-      assert(districtService.expirationDate.equals("2017-01-01"))
-      assert(districtService.requiresPersonnel)
-    }
-  }
-
-  test("update district service") {
-    if (Environment.isLocal) {
-      val districtService = DistrictService(
-        <districtService>
-          <externalServiceId>654</externalServiceId>
-          <initiationDate>2015-01-01</initiationDate>
-          <expirationDate>2018-01-01</expirationDate>
-          <requiresPersonnel>false</requiresPersonnel>
-        </districtService>,
-        Some(List[SifRequestParameter](SifRequestParameter("districtId", districtId.toString)))
-      )
-      val resource = "%s/%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.ExternalServices.toString, districtServiceId.toString)
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      sifRequest.body = Some(districtService.toXml.toXmlString)
-      println("UPDATE RESOURCE: %s".format(resource))
-      val response = new SifConsumer().update(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-  test("query district service all") {
-    if (Environment.isLocal) {
-      val resource = "%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.ExternalServices.toString)
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      sifRequest.accept = Some(SifContentType.Json)
-      println("QUERY RESOURCE: %s".format(resource))
-      val response = new SifConsumer().query(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-
-  /* DISTRICT SERVICE PERSONNEL ROUTES */
 
   var districtServicePersonnelId: Int = 0
 
@@ -654,79 +312,14 @@ class PrsServerTests extends FunSuite {
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.generatorId = Some(TestValues.generatorId)
       sifRequest.body = Some(districtServicePersonnel.toXml.toXmlString)
-      println("CREATE RESOURCE: %s".format(resource))
+      // println("CREATE RESOURCE: %s".format(resource))
       val response = new SifConsumer().create(sifRequest)
-      printlnResponse(response)
+      // printlnResponse(response)
       districtServicePersonnelId = (response.getBodyXml.get \ "creates" \ "create" \ "@id").text.toInt
       assert(response.statusCode.equals(SifHttpStatusCode.Created))
     }
   }
 
-  test("query district service personnel by id") {
-    if (Environment.isLocal) {
-      val resource = "%s/%s/%s/%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.ExternalServices.toString, districtServiceId, PrsResource.Personnel.toString, districtServicePersonnelId.toString)
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      println("QUERY RESOURCE: %s".format(resource))
-      val response = new SifConsumer().query(sifRequest)
-      printlnResponse(response)
-      val districtServicePersonnel = DistrictServicePersonnel((response.getBodyXml.get \ "districtServicePersonnel").head , None)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-      assert(districtServicePersonnel.id.equals(districtServicePersonnelId))
-      assert(districtServicePersonnel.districtServiceId.equals(districtServiceId))
-      assert(districtServicePersonnel.personnelId.equals(personnelId))
-      assert(districtServicePersonnel.role.equals("individual provider"))
-    }
-  }
-
-  test("update district service personnel") {
-    if (Environment.isLocal) {
-      val districtServicePersonnel = DistrictServicePersonnel(
-        <districtServicePersonnel>
-          <districtServiceId>{districtServiceId.toString}</districtServiceId>
-          <personnelId>{personnelId.toString}</personnelId>
-          <role>individual provider UPDATED</role>
-        </districtServicePersonnel>,
-        None
-      )
-      val resource = "%s/%s/%s/%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.ExternalServices.toString, districtServiceId, PrsResource.Personnel.toString, districtServicePersonnelId.toString)
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      sifRequest.body = Some(districtServicePersonnel.toXml.toXmlString)
-      println("UPDATE RESOURCE: %s".format(resource))
-      val response = new SifConsumer().update(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-  test("query district service personnel all") {
-    if (Environment.isLocal) {
-      val resource = "%s/%s/%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.ExternalServices.toString, districtServiceId, PrsResource.Personnel.toString)
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      sifRequest.accept = Some(SifContentType.Json)
-      println("QUERY RESOURCE: %s".format(resource))
-      val response = new SifConsumer().query(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-  test("delete district service personnel") {
-    if (Environment.isLocal) {
-      val resource = "%s/%s/%s/%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.ExternalServices.toString, districtServiceId, PrsResource.Personnel.toString, districtServicePersonnelId.toString)
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      println("DELETE RESOURCE: %s".format(resource))
-      val response = new SifConsumer().delete(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-
-  /* DISTRICT SERVICE STUDENT ROUTES */
 
   var districtServiceStudentId: Int = 0
 
@@ -748,110 +341,14 @@ class PrsServerTests extends FunSuite {
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.generatorId = Some(TestValues.generatorId)
       sifRequest.body = Some(student.toXml.toXmlString)
-      println("CREATE RESOURCE: %s".format(resource))
+      // println("CREATE RESOURCE: %s".format(resource))
       val response = new SifConsumer().create(sifRequest)
-      printlnResponse(response)
+      // printlnResponse(response)
       districtServiceStudentId = (response.getBodyXml.get \ "creates" \ "create" \ "@id").text.toInt
       assert(response.statusCode.equals(SifHttpStatusCode.Created))
     }
   }
 
-  test("query district service student by id") {
-    if (Environment.isLocal) {
-      val resource = "%s/%s/%s/%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.ExternalServices.toString, districtServiceId, PrsResource.Students.toString, districtServiceStudentId.toString)
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      println("QUERY RESOURCE: %s".format(resource))
-      val response = new SifConsumer().query(sifRequest)
-      printlnResponse(response)
-      val student = Student((response.getBodyXml.get \ "student").head , None)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-      assert(student.id.equals(districtServiceStudentId))
-      assert(student.districtServiceId.equals(districtServiceId))
-      assert(student.districtStudentId.equals("12345"))
-      assert(student.consent.get.consentType.equals("test type"))
-      assert(student.consent.get.startDate.get.equals("2016-01-01"))
-      assert(student.consent.get.endDate.get.equals("2017-01-01"))
-    }
-  }
-
-  test("update district service student") {
-    if (Environment.isLocal) {
-      val student = Student(
-        <student>
-          <districtServiceId>{districtServiceId}</districtServiceId>
-          <districtStudentId>54321</districtStudentId>
-          <consent>
-            <consentType>test type UPDATED</consentType>
-            <startDate>2018-01-01</startDate>
-            <endDate>2019-01-01</endDate>
-          </consent>
-        </student>,
-        None
-      )
-      val resource = "%s/%s/%s/%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.ExternalServices.toString, districtServiceId, PrsResource.Students.toString, districtServiceStudentId.toString)
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      sifRequest.body = Some(student.toXml.toXmlString)
-      println("UPDATE RESOURCE: %s".format(resource))
-      val response = new SifConsumer().update(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-  test("query district service student all") {
-    if (Environment.isLocal) {
-      val resource = "%s/%s/%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.ExternalServices.toString, districtServiceId, PrsResource.Students.toString)
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      sifRequest.accept = Some(SifContentType.Json)
-      println("QUERY RESOURCE: %s".format(resource))
-      val response = new SifConsumer().query(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-  test("query district student all") {
-    if (Environment.isLocal) {
-      val resource = "%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.Students.toString)
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      sifRequest.accept = Some(SifContentType.Json)
-      println("QUERY RESOURCE: %s".format(resource))
-      val response = new SifConsumer().query(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-  test("delete district service student") {
-    if (Environment.isLocal) {
-      val resource = "%s/%s/%s/%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.ExternalServices.toString, districtServiceId, PrsResource.Students.toString, districtServiceStudentId.toString)
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      println("DELETE RESOURCE: %s".format(resource))
-      val response = new SifConsumer().delete(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-  test("delete district service") {
-    if (Environment.isLocal) {
-      val resource = "%s/%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.ExternalServices.toString, districtServiceId.toString)
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      println("DELETE RESOURCE: %s".format(resource))
-      val response = new SifConsumer().delete(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-
-  /* DATA SET ROUTES */
 
   var dataSetId: Int = 0
 
@@ -875,9 +372,9 @@ class PrsServerTests extends FunSuite {
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.generatorId = Some(TestValues.generatorId)
       sifRequest.body = Some(dataSet.toXml.toXmlString)
-      println("CREATE RESOURCE: %s".format(resource))
+      // println("CREATE RESOURCE: %s".format(resource))
       val response = new SifConsumer().create(sifRequest)
-      printlnResponse(response)
+      // printlnResponse(response)
       dataSetId = (response.getBodyXml.get \ "creates" \ "create" \ "@id").text.toInt
       assert(response.statusCode.equals(SifHttpStatusCode.Created))
     }
@@ -910,62 +407,6 @@ class PrsServerTests extends FunSuite {
     }
   }
 
-  test("update dataSet empty body") {
-    if (Environment.isLocal) {
-      val resource = PrsResource.DataSets.toString
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.body = Some("")
-      val thrown = intercept[ArgumentInvalidException] {
-        println("UPDATE RESOURCE: %s".format(resource))
-        SifConsumer().update(sifRequest)
-      }
-      assert(thrown.getMessage.equals(ExceptionMessage.IsInvalid.format("request body")))
-    }
-  }
-
-  test("query dataSet by id") {
-    if (Environment.isLocal) {
-      val resource = PrsResource.DataSets.toString + "/" + dataSetId.toString
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      println("QUERY RESOURCE: %s".format(resource))
-      val response = new SifConsumer().query(sifRequest)
-      printlnResponse(response)
-      val dataSet = DataSet((response.getBodyXml.get \ "dataSet").head , None)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-      assert(dataSet.id.equals(dataSetId))
-      assert(dataSet.name.equals("sre"))
-    }
-  }
-
-  test("update dataSet") {
-    if (Environment.isLocal) {
-      val resource = "%s/%s".format(PrsResource.DataSets.toString, dataSetId.toString)
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      sifRequest.body = Some(DataSet(dataSetId, "sre UPDATED", Some("firstName UPDATED"), None).toXml.toXmlString)
-      println("UPDATE RESOURCE: %s".format(resource))
-      val response = new SifConsumer().update(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-  test("query dataSet all") {
-    if (Environment.isLocal) {
-      val resource = PrsResource.DataSets.toString
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      sifRequest.accept = Some(SifContentType.Json)
-      println("QUERY RESOURCE: %s".format(resource))
-      val response = new SifConsumer().query(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-
-  /* DATA OBJECT ROUTES */
 
   var dataObjectId: Int = 0
 
@@ -983,9 +424,9 @@ class PrsServerTests extends FunSuite {
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.generatorId = Some(TestValues.generatorId)
       sifRequest.body = Some(dataObject.toXml.toXmlString)
-      println("CREATE RESOURCE: %s".format(resource))
+      // println("CREATE RESOURCE: %s".format(resource))
       val response = new SifConsumer().create(sifRequest)
-      printlnResponse(response)
+      // printlnResponse(response)
       dataObjectId = (response.getBodyXml.get \ "creates" \ "create" \ "@id").text.toInt
       assert(response.statusCode.equals(SifHttpStatusCode.Created))
     }
@@ -997,7 +438,7 @@ class PrsServerTests extends FunSuite {
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.body = Some("")
       val thrown = intercept[ArgumentInvalidException] {
-        println("CREATE RESOURCE: %s".format(resource))
+        // println("CREATE RESOURCE: %s".format(resource))
         SifConsumer().create(sifRequest)
       }
       assert(thrown.getMessage.equals(ExceptionMessage.IsInvalid.format("request body")))
@@ -1010,11 +451,358 @@ class PrsServerTests extends FunSuite {
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.generatorId = Some(TestValues.generatorId)
       sifRequest.body = Some(<notAnEntity/>.toString)
-      println("CREATE RESOURCE: %s".format(resource))
+      // println("CREATE RESOURCE: %s".format(resource))
       val response = new SifConsumer().create(sifRequest)
-      printlnResponse(response)
+      // printlnResponse(response)
       assert(response.statusCode.equals(SifHttpStatusCode.BadRequest))
       assert((response.getBodyXml.get \ "description").text == "The root element 'notAnEntity' is invalid.")
+    }
+  }
+
+
+  test("create filters") {
+    if (Environment.isLocal) {
+      val resource = PrsResource.Filters.toString
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource, SifZone("highline"), SifContext("default"))
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      sifRequest.body = Some(<filter/>.toString)
+      // println("CREATE RESOURCE: %s".format(resource))
+      val response = new SifConsumer().create(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.MethodNotAllowed))
+    }
+  }
+
+
+  /* QUERY BY ID */
+
+  test("query authorized entity by id") {
+    if (Environment.isLocal) {
+      val resource = PrsResource.AuthorizedEntities.toString + "/" + authorizedEntityIdXml.toString
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      // println("QUERY RESOURCE: %s".format(resource))
+      val response = new SifConsumer().query(sifRequest)
+      // printlnResponse(response)
+      val authorizedEntity = AuthorizedEntity((response.getBodyXml.get \ "authorizedEntity").head , None)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+      assert(authorizedEntity.id.equals(authorizedEntityIdXml))
+      assert(authorizedEntity.name.equals("test"))
+    }
+  }
+
+  test("query personnel by id") {
+    if (Environment.isLocal) {
+      val authorizedEntityId: Int = authorizedEntityIdJson
+      val resource = "%s/%s/%s/%s".format(PrsResource.AuthorizedEntities.toString, authorizedEntityId.toString, PrsResource.Personnel.toString, personnelId.toString)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      // println("QUERY RESOURCE: %s".format(resource))
+      val response = new SifConsumer().query(sifRequest)
+      // printlnResponse(response)
+      val personnel = Personnel((response.getBodyXml.get \ "personnel").head , Some(List(SifRequestParameter("authorizedEntityId", authorizedEntityId.toString))))
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+      assert(personnel.id.equals(personnelId))
+      assert(personnel.authorizedEntityId.equals(authorizedEntityId))
+      assert(personnel.firstName.get.equals("jon"))
+      assert(personnel.lastName.get.equals("doe"))
+    }
+  }
+
+  test("query external service by id") {
+    if (Environment.isLocal) {
+      val authorizedEntityId: Int = authorizedEntityIdJson
+      val resource = "%s/%s/%s/%s".format(PrsResource.AuthorizedEntities.toString, authorizedEntityId.toString, PrsResource.ExternalServices.toString, externalServiceId.toString)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      // println("QUERY RESOURCE: %s".format(resource))
+      val response = new SifConsumer().query(sifRequest)
+      // printlnResponse(response)
+      val externalService = ExternalService((response.getBodyXml.get \ "externalService").head , Some(List(SifRequestParameter("authorizedEntityId", authorizedEntityId.toString))))
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+      assert(externalService.id.equals(externalServiceId))
+      assert(externalService.authorizedEntityId.equals(authorizedEntityId))
+      assert(externalService.name.get.equals("test service"))
+      assert(externalService.description.get.equals("test service description"))
+    }
+  }
+
+  test("query district by id") {
+    if (Environment.isLocal) {
+      val resource = PrsResource.Districts.toString + "/" + districtId.toString
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      // println("QUERY RESOURCE: %s".format(resource))
+      val response = new SifConsumer().query(sifRequest)
+      // printlnResponse(response)
+      val district = District((response.getBodyXml.get \ "district").head , None)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+      assert(district.id.equals(districtId))
+      assert(district.name.equals("test"))
+    }
+  }
+
+  test("query district service by id") {
+    if (Environment.isLocal) {
+      val resource = "%s/%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.ExternalServices.toString, districtServiceId.toString)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      // println("QUERY RESOURCE: %s".format(resource))
+      val response = new SifConsumer().query(sifRequest)
+      // printlnResponse(response)
+      val districtService = DistrictService((response.getBodyXml.get \ "districtService").head , Some(List(SifRequestParameter("districtId", districtId.toString))))
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+      assert(districtService.id.equals(districtServiceId))
+      assert(districtService.districtId.equals(districtId))
+      assert(districtService.initiationDate.equals("2016-01-01"))
+      assert(districtService.expirationDate.equals("2017-01-01"))
+      assert(districtService.requiresPersonnel)
+    }
+  }
+
+
+  test("query district service personnel by id") {
+    if (Environment.isLocal) {
+      val resource = "%s/%s/%s/%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.ExternalServices.toString, districtServiceId, PrsResource.Personnel.toString, districtServicePersonnelId.toString)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      // println("QUERY RESOURCE: %s".format(resource))
+      val response = new SifConsumer().query(sifRequest)
+      // printlnResponse(response)
+      val districtServicePersonnel = DistrictServicePersonnel((response.getBodyXml.get \ "districtServicePersonnel").head , None)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+      assert(districtServicePersonnel.id.equals(districtServicePersonnelId))
+      assert(districtServicePersonnel.districtServiceId.equals(districtServiceId))
+      assert(districtServicePersonnel.personnelId.equals(personnelId))
+      assert(districtServicePersonnel.role.equals("individual provider"))
+    }
+  }
+
+  test("query district service student by id") {
+    if (Environment.isLocal) {
+      val resource = "%s/%s/%s/%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.ExternalServices.toString, districtServiceId, PrsResource.Students.toString, districtServiceStudentId.toString)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      // println("QUERY RESOURCE: %s".format(resource))
+      val response = new SifConsumer().query(sifRequest)
+      // printlnResponse(response)
+      val student = Student((response.getBodyXml.get \ "student").head , None)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+      assert(student.id.equals(districtServiceStudentId))
+      assert(student.districtServiceId.equals(districtServiceId))
+      assert(student.districtStudentId.equals("12345"))
+      assert(student.consent.get.consentType.equals("test type"))
+      assert(student.consent.get.startDate.get.equals("2016-01-01"))
+      assert(student.consent.get.endDate.get.equals("2017-01-01"))
+    }
+  }
+
+  test("query dataSet by id") {
+    if (Environment.isLocal) {
+      val resource = PrsResource.DataSets.toString + "/" + dataSetId.toString
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      // println("QUERY RESOURCE: %s".format(resource))
+      val response = new SifConsumer().query(sifRequest)
+      // printlnResponse(response)
+      val dataSet = DataSet((response.getBodyXml.get \ "dataSet").head , None)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+      assert(dataSet.id.equals(dataSetId))
+      assert(dataSet.name.equals("sre"))
+    }
+  }
+
+  test("query dataObject by id") {
+    if (Environment.isLocal) {
+      val resource = PrsResource.DataSets.toString + "/" + dataSetId.toString + "/" + PrsResource.DataObjects.toString + "/" + dataObjectId.toString
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      // println("QUERY RESOURCE: %s".format(resource))
+      val response = new SifConsumer().query(sifRequest)
+      // printlnResponse(response)
+      val dataObject = DataObject((response.getBodyXml.get \ "dataObject").head , None)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+      assert(dataObject.id.equals(dataObjectId))
+      assert(dataObject.name.equals("test name"))
+      assert(dataObject.filterType.equals("test filter"))
+      assert(dataObject.includeStatement.equals("test include"))
+    }
+  }
+
+
+  /* UPDATE */
+
+  test("update authorized entity empty body") {
+    if (Environment.isLocal) {
+      val resource = PrsResource.AuthorizedEntities.toString
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.body = Some("")
+      val thrown = intercept[ArgumentInvalidException] {
+        // println("UPDATE RESOURCE: %s".format(resource))
+        SifConsumer().update(sifRequest)
+      }
+      assert(thrown.getMessage.equals(ExceptionMessage.IsInvalid.format("request body")))
+    }
+  }
+
+  test("update authorized entity") {
+    if (Environment.isLocal) {
+      val resource = "%s/%s".format(PrsResource.AuthorizedEntities.toString, authorizedEntityIdXml.toString)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      sifRequest.body = Some(AuthorizedEntity(authorizedEntityIdXml, "test UPDATED", None).toXml.toXmlString)
+      // println("UPDATE RESOURCE: %s".format(resource))
+      val response = new SifConsumer().update(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
+  test("update personnel") {
+    if (Environment.isLocal) {
+      val authorizedEntityId: Int = authorizedEntityIdJson
+      val resource = "%s/%s/%s/%s".format(PrsResource.AuthorizedEntities.toString, authorizedEntityId.toString, PrsResource.Personnel.toString, personnelId.toString)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      sifRequest.body = Some(Personnel(personnelId, authorizedEntityId, Some("jon UPDATED"), Some("jon UPDATED")).toXml.toXmlString)
+      // println("UPDATE RESOURCE: %s".format(resource))
+      val response = new SifConsumer().update(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
+  test("update external service") {
+    if (Environment.isLocal) {
+      val authorizedEntityId: Int = authorizedEntityIdJson
+      val resource = "%s/%s/%s/%s".format(PrsResource.AuthorizedEntities.toString, authorizedEntityId.toString, PrsResource.ExternalServices.toString, externalServiceId.toString)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      sifRequest.body = Some(ExternalService(externalServiceId, authorizedEntityId, Some("test service UPDATED"), Some("test service description UPDATED")).toXml.toXmlString)
+      // println("UPDATE RESOURCE: %s".format(resource))
+      val response = new SifConsumer().update(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
+  test("update district empty body") {
+    if (Environment.isLocal) {
+      val resource = PrsResource.Districts.toString
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.body = Some("")
+      val thrown = intercept[ArgumentInvalidException] {
+        // println("UPDATE RESOURCE: %s".format(resource))
+        SifConsumer().update(sifRequest)
+      }
+      assert(thrown.getMessage.equals(ExceptionMessage.IsInvalid.format("request body")))
+    }
+  }
+
+  test("update district") {
+    if (Environment.isLocal) {
+      val resource = "%s/%s".format(PrsResource.Districts.toString, districtId.toString)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      sifRequest.body = Some(District(districtId, "test UPDATED", None, None, None).toXml.toXmlString)
+      // println("UPDATE RESOURCE: %s".format(resource))
+      val response = new SifConsumer().update(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
+  test("update district service") {
+    if (Environment.isLocal) {
+      val districtService = DistrictService(
+        <districtService>
+          <externalServiceId>{externalServiceId}</externalServiceId>
+          <initiationDate>2015-01-01</initiationDate>
+          <expirationDate>2018-01-01</expirationDate>
+          <requiresPersonnel>false</requiresPersonnel>
+        </districtService>,
+        Some(List[SifRequestParameter](SifRequestParameter("districtId", districtId.toString)))
+      )
+      val resource = "%s/%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.ExternalServices.toString, districtServiceId.toString)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      sifRequest.body = Some(districtService.toXml.toXmlString)
+      // println("UPDATE RESOURCE: %s".format(resource))
+      val response = new SifConsumer().update(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
+  test("update district service personnel") {
+    if (Environment.isLocal) {
+      val districtServicePersonnel = DistrictServicePersonnel(
+        <districtServicePersonnel>
+          <districtServiceId>{districtServiceId.toString}</districtServiceId>
+          <personnelId>{personnelId.toString}</personnelId>
+          <role>individual provider UPDATED</role>
+        </districtServicePersonnel>,
+        None
+      )
+      val resource = "%s/%s/%s/%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.ExternalServices.toString, districtServiceId, PrsResource.Personnel.toString, districtServicePersonnelId.toString)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      sifRequest.body = Some(districtServicePersonnel.toXml.toXmlString)
+      // println("UPDATE RESOURCE: %s".format(resource))
+      val response = new SifConsumer().update(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
+  test("update district service student") {
+    if (Environment.isLocal) {
+      val student = Student(
+        <student>
+          <districtServiceId>{districtServiceId}</districtServiceId>
+          <districtStudentId>54321</districtStudentId>
+          <consent>
+            <consentType>test type UPDATED</consentType>
+            <startDate>2018-01-01</startDate>
+            <endDate>2019-01-01</endDate>
+          </consent>
+        </student>,
+        None
+      )
+      val resource = "%s/%s/%s/%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.ExternalServices.toString, districtServiceId, PrsResource.Students.toString, districtServiceStudentId.toString)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      sifRequest.body = Some(student.toXml.toXmlString)
+      // println("UPDATE RESOURCE: %s".format(resource))
+      val response = new SifConsumer().update(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
+  test("update dataSet empty body") {
+    if (Environment.isLocal) {
+      val resource = PrsResource.DataSets.toString
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.body = Some("")
+      val thrown = intercept[ArgumentInvalidException] {
+        // println("UPDATE RESOURCE: %s".format(resource))
+        SifConsumer().update(sifRequest)
+      }
+      assert(thrown.getMessage.equals(ExceptionMessage.IsInvalid.format("request body")))
+    }
+  }
+
+  test("update dataSet") {
+    if (Environment.isLocal) {
+      val resource = "%s/%s".format(PrsResource.DataSets.toString, dataSetId.toString)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      sifRequest.body = Some(DataSet(dataSetId, "sre UPDATED", Some("firstName UPDATED"), None).toXml.toXmlString)
+      // println("UPDATE RESOURCE: %s".format(resource))
+      val response = new SifConsumer().update(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
     }
   }
 
@@ -1024,27 +812,10 @@ class PrsServerTests extends FunSuite {
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.body = Some("")
       val thrown = intercept[ArgumentInvalidException] {
-        println("UPDATE RESOURCE: %s".format(resource))
+        // println("UPDATE RESOURCE: %s".format(resource))
         SifConsumer().update(sifRequest)
       }
       assert(thrown.getMessage.equals(ExceptionMessage.IsInvalid.format("request body")))
-    }
-  }
-
-  test("query dataObject by id") {
-    if (Environment.isLocal) {
-      val resource = PrsResource.DataSets.toString + "/" + dataSetId.toString + "/" + PrsResource.DataObjects.toString + "/" + dataObjectId.toString
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      println("QUERY RESOURCE: %s".format(resource))
-      val response = new SifConsumer().query(sifRequest)
-      printlnResponse(response)
-      val dataObject = DataObject((response.getBodyXml.get \ "dataObject").head , None)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-      assert(dataObject.id.equals(dataObjectId))
-      assert(dataObject.name.equals("test name"))
-      assert(dataObject.filterType.equals("test filter"))
-      assert(dataObject.includeStatement.equals("test include"))
     }
   }
 
@@ -1062,75 +833,10 @@ class PrsServerTests extends FunSuite {
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.generatorId = Some(TestValues.generatorId)
       sifRequest.body = Some(dataObject.toXml.toXmlString)
-      println("UPDATE RESOURCE: %s".format(resource))
+      // println("UPDATE RESOURCE: %s".format(resource))
       val response = new SifConsumer().update(sifRequest)
-      printlnResponse(response)
+      // printlnResponse(response)
       assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-  test("query dataObject all") {
-    if (Environment.isLocal) {
-      val resource = PrsResource.DataSets.toString + "/" + dataSetId.toString + "/" + PrsResource.DataObjects.toString
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      sifRequest.accept = Some(SifContentType.Json)
-      println("QUERY RESOURCE: %s".format(resource))
-      val response = new SifConsumer().query(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-  test("delete dataObject") {
-    if (Environment.isLocal) {
-      val resource = PrsResource.DataSets.toString + "/" + dataSetId.toString + "/" + PrsResource.DataObjects.toString + "/" + dataObjectId.toString
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      println("DELETE RESOURCE: %s".format(resource))
-      val response = new SifConsumer().delete(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-  test("delete dataSet") {
-    if (Environment.isLocal) {
-      val resource = PrsResource.DataSets.toString + "/" + dataSetId.toString
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      println("DELETE RESOURCE: %s".format(resource))
-      val response = new SifConsumer().delete(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
-
-  /* PRS FILTER ROUTES */
-
-  test("create filters") {
-    if (Environment.isLocal) {
-      val resource = PrsResource.Filters.toString
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource, SifZone("highline"), SifContext("default"))
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      sifRequest.body = Some(<filter/>.toString)
-      println("CREATE RESOURCE: %s".format(resource))
-      val response = new SifConsumer().create(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.MethodNotAllowed))
-    }
-  }
-
-  test("delete filters") {
-    if (Environment.isLocal) {
-      val resource = PrsResource.Filters.toString
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource, SifZone("highline"), SifContext("default"))
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      println("CREATE RESOURCE: %s".format(resource))
-      val response = new SifConsumer().delete(sifRequest)
-      printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.MethodNotAllowed))
     }
   }
 
@@ -1147,6 +853,141 @@ class PrsServerTests extends FunSuite {
     }
   }
 
+
+  /* QUERY ALL */
+
+  test("query authorized entity all") {
+    if (Environment.isLocal) {
+      val resource = PrsResource.AuthorizedEntities.toString
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      sifRequest.accept = Some(SifContentType.Json)
+      // println("QUERY RESOURCE: %s".format(resource))
+      val response = new SifConsumer().query(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
+  test("query personnel all") {
+    if (Environment.isLocal) {
+      val authorizedEntityId: Int = authorizedEntityIdJson
+      val resource = "%s/%s/%s".format(PrsResource.AuthorizedEntities.toString, authorizedEntityId.toString, PrsResource.Personnel.toString)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      sifRequest.accept = Some(SifContentType.Json)
+      // println("QUERY RESOURCE: %s".format(resource))
+      val response = new SifConsumer().query(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
+  test("query external service all") {
+    if (Environment.isLocal) {
+      val authorizedEntityId: Int = authorizedEntityIdJson
+      val resource = "%s/%s/%s".format(PrsResource.AuthorizedEntities.toString, authorizedEntityId.toString, PrsResource.ExternalServices.toString)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      sifRequest.accept = Some(SifContentType.Json)
+      // println("QUERY RESOURCE: %s".format(resource))
+      val response = new SifConsumer().query(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
+  test("query district all") {
+    if (Environment.isLocal) {
+      val resource = PrsResource.Districts.toString
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      sifRequest.accept = Some(SifContentType.Json)
+      // println("QUERY RESOURCE: %s".format(resource))
+      val response = new SifConsumer().query(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
+  test("query district service all") {
+    if (Environment.isLocal) {
+      val resource = "%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.ExternalServices.toString)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      sifRequest.accept = Some(SifContentType.Json)
+      // println("QUERY RESOURCE: %s".format(resource))
+      val response = new SifConsumer().query(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
+  test("query district service personnel all") {
+    if (Environment.isLocal) {
+      val resource = "%s/%s/%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.ExternalServices.toString, districtServiceId, PrsResource.Personnel.toString)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      sifRequest.accept = Some(SifContentType.Json)
+      // println("QUERY RESOURCE: %s".format(resource))
+      val response = new SifConsumer().query(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
+  test("query district service student all") {
+    if (Environment.isLocal) {
+      val resource = "%s/%s/%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.ExternalServices.toString, districtServiceId, PrsResource.Students.toString)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      sifRequest.accept = Some(SifContentType.Json)
+      // println("QUERY RESOURCE: %s".format(resource))
+      val response = new SifConsumer().query(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
+  test("query district student all") {
+    if (Environment.isLocal) {
+      val resource = "%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.Students.toString)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      sifRequest.accept = Some(SifContentType.Json)
+      // println("QUERY RESOURCE: %s".format(resource))
+      val response = new SifConsumer().query(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
+  test("query dataSet all") {
+    if (Environment.isLocal) {
+      val resource = PrsResource.DataSets.toString
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      sifRequest.accept = Some(SifContentType.Json)
+      // println("QUERY RESOURCE: %s".format(resource))
+      val response = new SifConsumer().query(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
+  test("query dataObject all") {
+    if (Environment.isLocal) {
+      val resource = PrsResource.DataSets.toString + "/" + dataSetId.toString + "/" + PrsResource.DataObjects.toString
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      sifRequest.accept = Some(SifContentType.Json)
+      // println("QUERY RESOURCE: %s".format(resource))
+      val response = new SifConsumer().query(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
   test("query filters") {
     if (Environment.isLocal) {
       val resource = PrsResource.Filters.toString
@@ -1157,13 +998,149 @@ class PrsServerTests extends FunSuite {
       sifRequest.addHeader("externalServiceId", "2")
       sifRequest.addHeader("objectType", "sre")
       sifRequest.addHeader("personnelId", "3")
-      println("QUERY RESOURCE: %s".format(resource))
+      // println("QUERY RESOURCE: %s".format(resource))
       val response = new SifConsumer().query(sifRequest)
-      printlnResponse(response)
+      // printlnResponse(response)
       assert(response.statusCode.equals(SifHttpStatusCode.Ok))
     }
   }
 
+
+  /* DELETE */
+
+  test("delete filters") {
+    if (Environment.isLocal) {
+      val resource = PrsResource.Filters.toString
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource, SifZone("highline"), SifContext("default"))
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      // println("CREATE RESOURCE: %s".format(resource))
+      val response = new SifConsumer().delete(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.MethodNotAllowed))
+    }
+  }
+
+  test("delete dataObject") {
+    if (Environment.isLocal) {
+      val resource = PrsResource.DataSets.toString + "/" + dataSetId.toString + "/" + PrsResource.DataObjects.toString + "/" + dataObjectId.toString
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      // println("DELETE RESOURCE: %s".format(resource))
+      val response = new SifConsumer().delete(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
+  test("delete dataSet") {
+    if (Environment.isLocal) {
+      val resource = PrsResource.DataSets.toString + "/" + dataSetId.toString
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      // println("DELETE RESOURCE: %s".format(resource))
+      val response = new SifConsumer().delete(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
+  test("delete district service personnel") {
+    if (Environment.isLocal) {
+      val resource = "%s/%s/%s/%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.ExternalServices.toString, districtServiceId, PrsResource.Personnel.toString, districtServicePersonnelId.toString)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      // println("DELETE RESOURCE: %s".format(resource))
+      val response = new SifConsumer().delete(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
+  test("delete district service student") {
+    if (Environment.isLocal) {
+      val resource = "%s/%s/%s/%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.ExternalServices.toString, districtServiceId, PrsResource.Students.toString, districtServiceStudentId.toString)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      // println("DELETE RESOURCE: %s".format(resource))
+      val response = new SifConsumer().delete(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
+  test("delete district service") {
+    if (Environment.isLocal) {
+      val resource = "%s/%s/%s/%s".format(PrsResource.Districts.toString, districtId.toString, PrsResource.ExternalServices.toString, districtServiceId.toString)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      // println("DELETE RESOURCE: %s".format(resource))
+      val response = new SifConsumer().delete(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
+  test("delete personnel") {
+    if (Environment.isLocal) {
+      val authorizedEntityId: Int = authorizedEntityIdJson
+      val resource = "%s/%s/%s/%s".format(PrsResource.AuthorizedEntities.toString, authorizedEntityId.toString, PrsResource.Personnel.toString, personnelId.toString)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      // println("DELETE RESOURCE: %s".format(resource))
+      val response = new SifConsumer().delete(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
+  test("delete external service") {
+    if (Environment.isLocal) {
+      val authorizedEntityId: Int = authorizedEntityIdJson
+      val resource = "%s/%s/%s/%s".format(PrsResource.AuthorizedEntities.toString, authorizedEntityId.toString, PrsResource.ExternalServices.toString, externalServiceId.toString)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      // println("DELETE RESOURCE: %s".format(resource))
+      val response = new SifConsumer().delete(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
+  test("delete authorized entity xml") {
+    if (Environment.isLocal) {
+      val resource = PrsResource.AuthorizedEntities.toString + "/" + authorizedEntityIdXml.toString
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      // println("DELETE RESOURCE: %s".format(resource))
+      val response = new SifConsumer().delete(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
+  test("delete authorized entity json") {
+    if (Environment.isLocal) {
+      val resource = PrsResource.AuthorizedEntities.toString + "/" + authorizedEntityIdJson.toString
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      // println("DELETE RESOURCE: %s".format(resource))
+      val response = new SifConsumer().delete(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
+  test("delete district") {
+    if (Environment.isLocal) {
+      val resource = PrsResource.Districts.toString + "/" + districtId.toString
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      // println("DELETE RESOURCE: %s".format(resource))
+      val response = new SifConsumer().delete(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
 
   private def delayedInterrupt(delay: Long) {
     delayedInterrupt(Thread.currentThread, delay)
