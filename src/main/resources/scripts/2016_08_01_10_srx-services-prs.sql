@@ -61,12 +61,15 @@ CREATE TABLE IF NOT EXISTS srx_services_prs.authorized_entity
 );
 
 CREATE OR REPLACE FUNCTION delete_contact_row ()
- RETURNS trigger LANGUAGE plpgsql AS $$
+ RETURNS trigger LANGUAGE plpgsql AS
+$$
 BEGIN
  DELETE FROM srx_services_prs.contact WHERE id = OLD.main_contact_id;
  RETURN NEW;
 END;
 $$;
+
+DROP TRIGGER IF EXISTS delete_authorized_entity_contact ON srx_services_prs.authorized_entity;
 
 CREATE TRIGGER delete_authorized_entity_contact
  AFTER DELETE
@@ -164,12 +167,15 @@ CREATE TABLE IF NOT EXISTS srx_services_prs.district
 );
 
 CREATE OR REPLACE FUNCTION delete_contact_row ()
- RETURNS trigger LANGUAGE plpgsql AS $$
+ RETURNS trigger LANGUAGE plpgsql AS
+$$
 BEGIN
  DELETE FROM srx_services_prs.contact WHERE id = OLD.main_contact_id;
  RETURN NEW;
 END;
 $$;
+
+DROP TRIGGER IF EXISTS delete_district_contact ON srx_services_prs.district;
 
 CREATE TRIGGER delete_district_contact
  AFTER DELETE
