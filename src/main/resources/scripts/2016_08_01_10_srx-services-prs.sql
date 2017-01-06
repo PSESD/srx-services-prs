@@ -32,6 +32,15 @@ CREATE TABLE IF NOT EXISTS srx_services_prs.contact
   CONSTRAINT contact_pkey PRIMARY KEY (id)
 );
 
+CREATE OR REPLACE FUNCTION delete_contact_row ()
+ RETURNS trigger LANGUAGE plpgsql AS
+$$
+BEGIN
+ DELETE FROM srx_services_prs.contact WHERE id = OLD.main_contact_id;
+ RETURN NEW;
+END;
+$$;
+
 /* ----------- AUTHORIZED ENTITY ----------- */
 
 DO
@@ -57,17 +66,9 @@ CREATE TABLE IF NOT EXISTS srx_services_prs.authorized_entity
   id integer NOT NULL DEFAULT nextval('srx_services_prs.authorized_entity_id_seq'::regclass),
   name text NOT NULL,
   main_contact_id integer,
-  CONSTRAINT authorized_entity_pkey PRIMARY KEY (id)
+  CONSTRAINT authorized_entity_pkey PRIMARY KEY (id),
+  CONSTRAINT authorized_entity_unique UNIQUE (name)
 );
-
-CREATE OR REPLACE FUNCTION delete_contact_row ()
- RETURNS trigger LANGUAGE plpgsql AS
-$$
-BEGIN
- DELETE FROM srx_services_prs.contact WHERE id = OLD.main_contact_id;
- RETURN NEW;
-END;
-$$;
 
 DROP TRIGGER IF EXISTS delete_authorized_entity_contact ON srx_services_prs.authorized_entity;
 
@@ -131,9 +132,10 @@ CREATE TABLE IF NOT EXISTS srx_services_prs.external_service
 (
   id integer NOT NULL DEFAULT nextval('srx_services_prs.external_service_id_seq'::regclass),
   authorized_entity_id integer NOT NULL REFERENCES srx_services_prs.authorized_entity ON DELETE CASCADE,
-  name text,
+  name text ,
   description text,
-  CONSTRAINT external_service_pkey PRIMARY KEY (id)
+  CONSTRAINT external_service_pkey PRIMARY KEY (id),
+  CONSTRAINT external_service_unique UNIQUE (authorized_entity_id, name)
 );
 
 /* ----------- DISTRICT ----------- */
@@ -163,17 +165,9 @@ CREATE TABLE IF NOT EXISTS srx_services_prs.district
   nces_lea_code text,
   zone_id text,
   main_contact_id integer,
-  CONSTRAINT district_pkey PRIMARY KEY (id)
+  CONSTRAINT district_pkey PRIMARY KEY (id),
+  CONSTRAINT district_unique UNIQUE (name)
 );
-
-CREATE OR REPLACE FUNCTION delete_contact_row ()
- RETURNS trigger LANGUAGE plpgsql AS
-$$
-BEGIN
- DELETE FROM srx_services_prs.contact WHERE id = OLD.main_contact_id;
- RETURN NEW;
-END;
-$$;
 
 DROP TRIGGER IF EXISTS delete_district_contact ON srx_services_prs.district;
 
@@ -212,7 +206,8 @@ CREATE TABLE IF NOT EXISTS srx_services_prs.district_service
   requires_personnel boolean NOT NULL,
   initiation_date date,
   expiration_date date,
-  CONSTRAINT district_service_pkey PRIMARY KEY (id)
+  CONSTRAINT district_service_pkey PRIMARY KEY (id),
+  CONSTRAINT district_service_unique UNIQUE (district_id, external_service_id)
 );
 
 
@@ -271,7 +266,8 @@ CREATE TABLE IF NOT EXISTS srx_services_prs.data_set
   id integer NOT NULL DEFAULT nextval('srx_services_prs.data_set_id_seq'::regclass),
   name text NOT NULL,
   description text,
-  CONSTRAINT data_set_pkey PRIMARY KEY (id)
+  CONSTRAINT data_set_pkey PRIMARY KEY (id),
+  CONSTRAINT data_set_unique UNIQUE (name)
 );
 
 
@@ -302,7 +298,8 @@ CREATE TABLE IF NOT EXISTS srx_services_prs.data_object
   name text NOT NULL,
   filter_type text NOT NULL,
   include_statement text NOT NULL,
-  CONSTRAINT data_object_pkey PRIMARY KEY (id)
+  CONSTRAINT data_object_pkey PRIMARY KEY (id),
+  CONSTRAINT data_object_unique UNIQUE (data_set_id, name)
 );
 
 CREATE OR REPLACE FUNCTION srx_services_prs.update_data_set_data_object(d_s_id integer, d_o_id integer, n text, ft text, ins text) RETURNS void AS
@@ -340,7 +337,8 @@ CREATE TABLE IF NOT EXISTS srx_services_prs.district_service_data_set
   id integer NOT NULL DEFAULT nextval('srx_services_prs.district_service_data_set_id_seq'::regclass),
   district_service_id integer NOT NULL REFERENCES srx_services_prs.district_service ON DELETE CASCADE,
   data_set_id integer NOT NULL REFERENCES srx_services_prs.data_set ON DELETE CASCADE,
-  CONSTRAINT district_service_data_set_pkey PRIMARY KEY (id)
+  CONSTRAINT district_service_data_set_pkey PRIMARY KEY (id),
+  CONSTRAINT district_service_data_set_unique UNIQUE (district_service_id, data_set_id)
 );
 
 CREATE OR REPLACE FUNCTION srx_services_prs.update_district_service_data_set(dist_serv_id integer, d_s_id integer) RETURNS void AS
@@ -411,9 +409,9 @@ CREATE TABLE IF NOT EXISTS srx_services_prs.student
   district_service_id integer NOT NULL REFERENCES srx_services_prs.district_service ON DELETE CASCADE,
   consent_id integer NOT NULL REFERENCES srx_services_prs.consent ON DELETE CASCADE,
   district_student_id text NOT NULL,
-  CONSTRAINT student_pkey PRIMARY KEY (id)
+  CONSTRAINT student_pkey PRIMARY KEY (id),
+  CONSTRAINT student_unique UNIQUE (district_service_id, district_student_id)
 );
-
 
 /* ----------- STUDENT PERSONNEL ----------- */
 

@@ -80,12 +80,20 @@ class AuthorizedEntityTests extends FunSuite {
   }
 
   test("create with no contact") {
-    val authorizedEntity = AuthorizedEntity(0, "test", None)
+    val authorizedEntity = AuthorizedEntity(0, "test no contact", None)
     val result = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
     createdId2 = result.getId
     assert(result.success)
     assert(result.exceptions.isEmpty)
     assert(result.toXml.get.toXmlString.contains("id=\"%s\"".format(createdId2.toString)))
+  }
+
+   test("create duplicate") {
+    val authorizedEntity = AuthorizedEntity(0, "test", None)
+    val result = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
+    assert(!result.success)
+    assert(result.statusCode == SifHttpStatusCode.BadRequest)
+    assert(result.toXml.isEmpty)
   }
 
   test("update id parameter") {
