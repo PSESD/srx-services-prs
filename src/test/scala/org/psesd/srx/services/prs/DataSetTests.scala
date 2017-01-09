@@ -1,5 +1,6 @@
 package org.psesd.srx.services.prs
 
+import org.psesd.srx.shared.core.SrxResourceErrorResult
 import org.psesd.srx.shared.core.exceptions.{ArgumentNullOrEmptyOrWhitespaceException, ExceptionMessage}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestParameter}
@@ -113,6 +114,15 @@ class DataSetTests extends FunSuite {
     assert(result.toXml.get.toXmlString.contains("id=\"%s\"".format(createdId.toString)))
   }
 
+  test("create duplicate") {
+    val dataSet = DataSet(0, "sre", Some("firstName"), None)
+    val result = DataSet.create(dataSet, List[SifRequestParameter]()).asInstanceOf[SrxResourceErrorResult]
+
+    assert(!result.success)
+    assert(result.statusCode == SifHttpStatusCode.BadRequest)
+    assert(result.toXml.isEmpty)
+  }
+
   test("update id parameter") {
     val dataSet = DataSet(0, "sre UPDATED", Some("firstName UPDATED"), None)
     val result = DataSet.update(dataSet, List[SifRequestParameter](SifRequestParameter("id", createdId.toString)))
@@ -120,6 +130,20 @@ class DataSetTests extends FunSuite {
     assert(result.exceptions.isEmpty)
     val resultBody = result.toXml.get.toXmlString
     assert(resultBody.contains("id=\"%s\"".format(createdId.toString)))
+  }
+
+  test("update duplicate") {
+    val newDataSet = DataSet(0, "sre", Some("firstName"), None)
+    val newDataSetResult = DataSet.create(newDataSet, List[SifRequestParameter]()).asInstanceOf[DataSetResult]
+
+    val updatedDataSet = DataSet(0, "sre UPDATED", Some("firstName UPDATED"), None)
+    val result = DataSet.update(updatedDataSet, List[SifRequestParameter](SifRequestParameter("id", newDataSetResult.getId.toString))).asInstanceOf[SrxResourceErrorResult]
+
+    assert(!result.success)
+    assert(result.statusCode == SifHttpStatusCode.BadRequest)
+    assert(result.toXml.isEmpty)
+
+    DataSet.delete(List[SifRequestParameter](SifRequestParameter("id", newDataSetResult.getId.toString)))
   }
 
   test("query bad request") {

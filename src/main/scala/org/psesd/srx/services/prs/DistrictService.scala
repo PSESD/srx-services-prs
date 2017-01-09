@@ -10,6 +10,7 @@ import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentN
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
 import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestAction, SifRequestParameter}
+import org.psesd.srx.shared.data.exceptions.DatasourceDuplicateViolationException
 import org.psesd.srx.shared.data.{Datasource, DatasourceResult}
 
 import scala.collection.mutable.ArrayBuffer
@@ -268,6 +269,8 @@ object DistrictService extends PrsEntityService {
         throw result.exceptions.head
       }
     } catch {
+      case dv: DatasourceDuplicateViolationException =>
+        SrxResourceErrorResult(SifHttpStatusCode.BadRequest, dv)
       case e: Exception =>
         SrxResourceErrorResult(SifHttpStatusCode.InternalServerError, e)
     }
@@ -438,7 +441,7 @@ object DistrictService extends PrsEntityService {
         }
 
         datasource.close()
-
+val res = result
         if (result.success) {
           val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
           var dsResult: DistrictServiceResult = null
@@ -465,6 +468,8 @@ object DistrictService extends PrsEntityService {
         }
       }
     } catch {
+      case dv: DatasourceDuplicateViolationException =>
+        SrxResourceErrorResult(SifHttpStatusCode.BadRequest, dv)
       case e: Exception =>
         SrxResourceErrorResult(SifHttpStatusCode.InternalServerError, e)
     }

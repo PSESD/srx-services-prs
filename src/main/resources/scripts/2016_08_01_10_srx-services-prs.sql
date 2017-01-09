@@ -299,7 +299,7 @@ CREATE TABLE IF NOT EXISTS srx_services_prs.data_object
   filter_type text NOT NULL,
   include_statement text NOT NULL,
   CONSTRAINT data_object_pkey PRIMARY KEY (id),
-  CONSTRAINT data_object_unique UNIQUE (data_set_id, name)
+  CONSTRAINT data_object_unique UNIQUE (data_set_id, name, filter_type, include_statement)
 );
 
 CREATE OR REPLACE FUNCTION srx_services_prs.update_data_set_data_object(d_s_id integer, d_o_id integer, n text, ft text, ins text) RETURNS void AS

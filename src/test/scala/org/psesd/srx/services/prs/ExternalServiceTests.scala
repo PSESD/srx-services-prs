@@ -1,16 +1,21 @@
 package org.psesd.srx.services.prs
 
+import org.psesd.srx.shared.core.SrxResourceErrorResult
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestParameter}
 import org.scalatest.FunSuite
+import org.scalatest.BeforeAndAfterAll
 
-class ExternalServiceTests extends FunSuite {
+class ExternalServiceTests extends FunSuite with BeforeAndAfterAll {
 
   var createdId: Int = 0
 
-  val contact = new Contact(0, Some("jon"), Some("director"), Some("jon@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("jon.com"))
-  val authorizedEntity = AuthorizedEntity(0, "test", Some(contact))
-  val authorizedEntityResult = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
+  val authorizedEntity: AuthorizedEntity = AuthorizedEntity(0, "test", None)
+  var authorizedEntityResult: AuthorizedEntityResult = _
+
+  override def beforeAll {
+    authorizedEntityResult = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
+  }
 
   test("constructor") {
     val id = 123
@@ -62,6 +67,14 @@ class ExternalServiceTests extends FunSuite {
     assert(result.toXml.get.toXmlString.contains("id=\"%s\"".format(createdId.toString)))
   }
 
+  test("create duplicate") {
+    val externalService = ExternalService(0, authorizedEntityResult.getId, Some("test"), Some("test service description"))
+    val result = ExternalService.create(externalService, List[SifRequestParameter]()).asInstanceOf[SrxResourceErrorResult]
+    assert(!result.success)
+    assert(result.statusCode == SifHttpStatusCode.BadRequest)
+    assert(result.toXml.isEmpty)
+  }
+
   test("update id parameter") {
     val externalService = ExternalService(0, authorizedEntityResult.getId, Some("test UPDATED"), Some("test service description UPDATED"))
     val result = ExternalService.update(externalService, List[SifRequestParameter](SifRequestParameter("id", createdId.toString)))
@@ -69,6 +82,20 @@ class ExternalServiceTests extends FunSuite {
     assert(result.exceptions.isEmpty)
     val resultBody = result.toXml.get.toXmlString
     assert(resultBody.contains("id=\"%s\"".format(createdId.toString)))
+  }
+
+  test("update duplicate") {
+    val newExternalService = ExternalService(0, authorizedEntityResult.getId, Some("new test"), Some("test service description"))
+    val newExternalServiceResult = ExternalService.create(newExternalService, List[SifRequestParameter]()).asInstanceOf[ExternalServiceResult]
+
+    val externalService = ExternalService(0, authorizedEntityResult.getId, Some("test UPDATED"), Some("test service description"))
+    val result = ExternalService.update(externalService, List[SifRequestParameter]()).asInstanceOf[SrxResourceErrorResult]
+
+    assert(!result.success)
+    assert(result.statusCode == SifHttpStatusCode.BadRequest)
+    assert(result.toXml.isEmpty)
+
+    ExternalService.delete(List[SifRequestParameter](SifRequestParameter("id", newExternalServiceResult.getId.toString)))
   }
 
   test("query bad request") {
@@ -106,4 +133,7 @@ class ExternalServiceTests extends FunSuite {
     assert(result.statusCode == SifHttpStatusCode.Ok)
   }
 
+  override def afterAll {
+    AuthorizedEntity.delete(List[SifRequestParameter](SifRequestParameter("id", authorizedEntityResult.getId.toString)))
+  }
 }

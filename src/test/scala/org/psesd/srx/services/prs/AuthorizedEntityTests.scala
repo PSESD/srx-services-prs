@@ -1,5 +1,6 @@
 package org.psesd.srx.services.prs
 
+import org.psesd.srx.shared.core.SrxResourceErrorResult
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestParameter}
 import org.scalatest.FunSuite
@@ -90,7 +91,7 @@ class AuthorizedEntityTests extends FunSuite {
 
    test("create duplicate") {
     val authorizedEntity = AuthorizedEntity(0, "test", None)
-    val result = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
+    val result = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[SrxResourceErrorResult]
     assert(!result.success)
     assert(result.statusCode == SifHttpStatusCode.BadRequest)
     assert(result.toXml.isEmpty)
@@ -113,6 +114,14 @@ class AuthorizedEntityTests extends FunSuite {
     assert(result.exceptions.isEmpty)
     val resultBody = result.toXml.get.toXmlString
     assert(resultBody.contains("id=\"%s\"".format(createdId.toString)))
+  }
+
+  test("update duplicate") {
+    val authorizedEntity = AuthorizedEntity(0, "test UPDATED 1", None)
+    val result = AuthorizedEntity.update(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[SrxResourceErrorResult]
+    assert(!result.success)
+    assert(result.statusCode == SifHttpStatusCode.BadRequest)
+    assert(result.toXml.isEmpty)
   }
 
   test("query bad request") {

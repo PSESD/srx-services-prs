@@ -7,6 +7,7 @@ import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentN
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
 import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestAction, SifRequestParameter}
+import org.psesd.srx.shared.data.exceptions.DatasourceDuplicateViolationException
 import org.psesd.srx.shared.data.{Datasource, DatasourceResult}
 
 import scala.collection.mutable.ArrayBuffer
@@ -172,6 +173,8 @@ object Student extends PrsEntityService {
         throw result.exceptions.head
       }
     } catch {
+      case dv: DatasourceDuplicateViolationException =>
+        SrxResourceErrorResult(SifHttpStatusCode.BadRequest, dv)
       case e: Exception =>
         SrxResourceErrorResult(SifHttpStatusCode.InternalServerError, e)
     }
@@ -358,6 +361,8 @@ object Student extends PrsEntityService {
         }
       }
     } catch {
+      case dv: DatasourceDuplicateViolationException =>
+        SrxResourceErrorResult(SifHttpStatusCode.BadRequest, dv)
       case e: Exception =>
         SrxResourceErrorResult(SifHttpStatusCode.InternalServerError, e)
     }

@@ -1,34 +1,38 @@
 package org.psesd.srx.services.prs
 
+import org.psesd.srx.shared.core.SrxResourceErrorResult
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ExceptionMessage}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestParameter}
 import org.scalatest.FunSuite
+import org.scalatest.BeforeAndAfterAll
 
 import scala.collection.mutable.ArrayBuffer
 
-class DistrictServiceTests extends FunSuite {
+class DistrictServiceTests extends FunSuite with BeforeAndAfterAll {
 
   var createdId: Int = 0
 
-  val districtContact = new Contact(0, Some("jon"), Some("director"), Some("jon@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("jon.com"))
-  val district = District(0, "test", None, None, Some(districtContact))
-  val districtResult = District.create(district, List[SifRequestParameter]()).asInstanceOf[DistrictResult]
+  val district: District = District(0, "test", None, None, None)
+  var districtResult: DistrictResult = _
 
-  val authorizedEntityContact = new Contact(0, Some("jon"), Some("director"), Some("jon@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("jon.com"))
-  val authorizedEntity = AuthorizedEntity(0, "test", Some(authorizedEntityContact))
-  val authorizedEntityResult = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
+  val authorizedEntity: AuthorizedEntity = AuthorizedEntity(0, "test", None)
+  var authorizedEntityResult: AuthorizedEntityResult = _
 
-  val externalService = ExternalService(0, authorizedEntityResult.getId, Some("test"), Some("test service description"))
-  val externalServiceResult = ExternalService.create(externalService, List[SifRequestParameter]()).asInstanceOf[ExternalServiceResult]
+  var externalServiceResult: ExternalServiceResult = _
 
-  val dataobjects1 = ArrayBuffer[DataObject](DataObject(0, 0, "test object", "test type", "test include"))
-  val dataSet1 = DataSet(0, "sre", Some("firstName"), Some(dataobjects1))
-  val dataSetResult1 = DataSet.create(dataSet1, List[SifRequestParameter]()).asInstanceOf[DataSetResult]
+  val dataSet: DataSet = DataSet(0, "sre", Some("firstName"), None)
+  var dataSetResult: DataSetResult = _
 
-  val dataobjects2 = ArrayBuffer[DataObject](DataObject(0, 0, "test object", "test type", "test include"))
-  val dataSet2 = DataSet(0, "sre", Some("firstName"), Some(dataobjects2))
-  val dataSetResult2 = DataSet.create(dataSet2, List[SifRequestParameter]()).asInstanceOf[DataSetResult]
+  override def beforeAll {
+    districtResult = District.create(district, List[SifRequestParameter]()).asInstanceOf[DistrictResult]
+    authorizedEntityResult = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
+
+    val externalService: ExternalService = ExternalService(0, authorizedEntityResult.getId, Some("test"), Some("test service description"))
+    externalServiceResult = ExternalService.create(externalService, List[SifRequestParameter]()).asInstanceOf[ExternalServiceResult]
+
+    dataSetResult = DataSet.create(dataSet, List[SifRequestParameter]()).asInstanceOf[DataSetResult]
+  }
 
   test("constructor") {
     val id = 123
@@ -193,11 +197,7 @@ class DistrictServiceTests extends FunSuite {
         <requiresPersonnel>true</requiresPersonnel>
         <dataSets>
           <dataSet>
-            <id>{dataSetResult1.getId}</id>
-            <name>sre</name>
-          </dataSet>
-          <dataSet>
-            <id>{dataSetResult2.getId}</id>
+            <id>{dataSetResult.getId}</id>
             <name>sre</name>
           </dataSet>
         </dataSets>
@@ -211,7 +211,7 @@ class DistrictServiceTests extends FunSuite {
     assert(result.toXml.get.toXmlString.contains("id=\"%s\"".format(createdId.toString)))
   }
 
-  test("update") {
+  test("create duplicate") {
     val districtService = DistrictService(
       <districtService>
         <externalServiceId>{externalServiceResult.getId}</externalServiceId>
@@ -220,18 +220,67 @@ class DistrictServiceTests extends FunSuite {
         <requiresPersonnel>true</requiresPersonnel>
         <dataSets>
           <dataSet>
-            <id>{dataSetResult1.getId}</id>
-            <name>sre</name>
-          </dataSet>
-          <dataSet>
-            <id>{dataSetResult2.getId}</id>
+            <id>{dataSetResult.getId}</id>
             <name>sre</name>
           </dataSet>
         </dataSets>
       </districtService>,
       Some(List[SifRequestParameter](SifRequestParameter("districtId", {districtResult.getId.toString})))
     )
-    val districtServiceResult = DistrictService.create(districtService, List[SifRequestParameter]()).asInstanceOf[DistrictServiceResult]
+    val result = DistrictService.create(districtService, List[SifRequestParameter]()).asInstanceOf[SrxResourceErrorResult]
+
+    assert(!result.success)
+    assert(result.statusCode == SifHttpStatusCode.BadRequest)
+    assert(result.toXml.isEmpty)
+  }
+
+  test("update") {
+    val districtServiceUpdated = DistrictService(
+      <districtService>
+        <externalServiceId>{externalServiceResult.getId}</externalServiceId>
+        <initiationDate>2015-01-01</initiationDate>
+        <expirationDate>2018-01-01</expirationDate>
+        <requiresPersonnel>false</requiresPersonnel>
+        <dataSets>
+          <dataSet>
+            <id>{dataSetResult.getId}</id>
+            <name>sre</name>
+          </dataSet>
+        </dataSets>
+      </districtService>,
+      Some(List[SifRequestParameter](SifRequestParameter("districtId", {districtResult.getId.toString})))
+    )
+
+    val result = DistrictService.update(districtServiceUpdated, List[SifRequestParameter](SifRequestParameter("id", createdId.toString)))
+
+    assert(result.success)
+    assert(result.exceptions.isEmpty)
+    val resultBody = result.toXml.get.toXmlString
+    assert(resultBody.contains("id=\"%s\"".format(createdId.toString)))
+  }
+
+  test("update duplicate") {
+    val newDistrict: District = District(0, "new test", None, None, None)
+    val newDistrictResult = District.create(newDistrict, List[SifRequestParameter]()).asInstanceOf[DistrictResult]
+
+    val districtService = DistrictService(
+      <districtService>
+        <externalServiceId>{externalServiceResult.getId}</externalServiceId>
+        <initiationDate>2016-01-01</initiationDate>
+        <expirationDate>2017-01-01</expirationDate>
+        <requiresPersonnel>true</requiresPersonnel>
+        <dataSets>
+          <dataSet>
+            <id>{dataSetResult.getId}</id>
+            <name>sre</name>
+          </dataSet>
+        </dataSets>
+      </districtService>,
+      Some(List[SifRequestParameter](SifRequestParameter("districtId", {newDistrictResult.getId.toString})))
+    )
+    val createdDistrictServiceResult = DistrictService.create(districtService, List[SifRequestParameter]()).asInstanceOf[DistrictServiceResult]
+    val newCreatedId = createdDistrictServiceResult.getId
+
 
     val districtServiceUpdated = DistrictService(
       <districtService>
@@ -241,11 +290,7 @@ class DistrictServiceTests extends FunSuite {
         <requiresPersonnel>false</requiresPersonnel>
         <dataSets>
           <dataSet>
-            <id>{dataSetResult1.getId}</id>
-            <name>sre</name>
-          </dataSet>
-          <dataSet>
-            <id>{dataSetResult2.getId}</id>
+            <id>{dataSetResult.getId}</id>
             <name>sre</name>
           </dataSet>
         </dataSets>
@@ -253,12 +298,14 @@ class DistrictServiceTests extends FunSuite {
       Some(List[SifRequestParameter](SifRequestParameter("districtId", {districtResult.getId.toString})))
     )
 
-    val result = DistrictService.update(districtServiceUpdated, List[SifRequestParameter](SifRequestParameter("id", districtServiceResult.getId.toString)))
+    val result = DistrictService.update(districtServiceUpdated, List[SifRequestParameter](SifRequestParameter("id", newCreatedId.toString)))
 
-    assert(result.success)
-    assert(result.exceptions.isEmpty)
-    val resultBody = result.toXml.get.toXmlString
-    assert(resultBody.contains("id=\"%s\"".format(districtServiceResult.getId.toString)))
+    assert(!result.success)
+    assert(result.statusCode == SifHttpStatusCode.BadRequest)
+    assert(result.toXml.isEmpty)
+
+    District.delete(List[SifRequestParameter](SifRequestParameter("id", newDistrictResult.getId.toString)))
+    DistrictService.delete(List[SifRequestParameter](SifRequestParameter("id", newCreatedId.toString)))
   }
 
   test("query bad request") {
@@ -276,36 +323,15 @@ class DistrictServiceTests extends FunSuite {
   }
 
   test("query by id") {
-    val districtService = DistrictService(
-      <districtService>
-        <externalServiceId>{externalServiceResult.getId}</externalServiceId>
-        <initiationDate>2016-01-01</initiationDate>
-        <expirationDate>2017-01-01</expirationDate>
-        <requiresPersonnel>true</requiresPersonnel>
-        <dataSets>
-          <dataSet>
-            <id>{dataSetResult1.getId}</id>
-            <name>sre</name>
-          </dataSet>
-          <dataSet>
-            <id>{dataSetResult2.getId}</id>
-            <name>sre</name>
-          </dataSet>
-        </dataSets>
-      </districtService>,
-      Some(List[SifRequestParameter](SifRequestParameter("districtId", {districtResult.getId.toString})))
-    )
-    val districtServiceResult = DistrictService.create(districtService, List[SifRequestParameter]()).asInstanceOf[DistrictServiceResult]
-
-    val result = DistrictService.query(List[SifRequestParameter](SifRequestParameter("id", districtServiceResult.getId.toString)))
+    val result = DistrictService.query(List[SifRequestParameter](SifRequestParameter("id", createdId.toString)))
     assert(result.success)
     assert(result.statusCode == SifHttpStatusCode.Ok)
     val resultBody = result.toXml.get.toXmlString
     assert(resultBody.contains("<districtId>" + districtResult.getId.toString + "</districtId>"))
     assert(resultBody.contains("<externalServiceId>" + externalServiceResult.getId.toString + "</externalServiceId>"))
-    assert(resultBody.contains("<initiationDate>2016-01-01</initiationDate>"))
-    assert(resultBody.contains("<expirationDate>2017-01-01</expirationDate>"))
-    assert(resultBody.contains("<requiresPersonnel>true</requiresPersonnel>"))
+    assert(resultBody.contains("<initiationDate>2015-01-01</initiationDate>"))
+    assert(resultBody.contains("<expirationDate>2018-01-01</expirationDate>"))
+    assert(resultBody.contains("<requiresPersonnel>false</requiresPersonnel>"))
   }
 
   test("query all") {
@@ -321,4 +347,10 @@ class DistrictServiceTests extends FunSuite {
     assert(result.statusCode == SifHttpStatusCode.Ok)
   }
 
+  override def afterAll {
+    District.delete(List[SifRequestParameter](SifRequestParameter("id", districtResult.getId.toString)))
+    AuthorizedEntity.delete(List[SifRequestParameter](SifRequestParameter("id", authorizedEntityResult.getId.toString)))
+    ExternalService.delete(List[SifRequestParameter](SifRequestParameter("id", externalServiceResult.getId.toString)))
+    DataSet.delete(List[SifRequestParameter](SifRequestParameter("id", dataSetResult.getId.toString)))
+  }
 }

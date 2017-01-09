@@ -1,5 +1,6 @@
 package org.psesd.srx.services.prs
 
+import org.psesd.srx.shared.core.SrxResourceErrorResult
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestParameter}
 import org.scalatest.FunSuite
@@ -94,12 +95,20 @@ class DistrictTests extends FunSuite {
   }
 
   test("create with no contact") {
-    val district = District(0, "test", None, None, None)
+    val district = District(0, "test no contact", None, None, None)
     val result = District.create(district, List[SifRequestParameter]()).asInstanceOf[DistrictResult]
     createdId2 = result.getId
     assert(result.success)
     assert(result.exceptions.isEmpty)
     assert(result.toXml.get.toXmlString.contains("id=\"%s\"".format(createdId2.toString)))
+  }
+
+  test("create duplicate") {
+    val district = District(0, "test", None, None, None)
+    val result = District.create(district, List[SifRequestParameter]()).asInstanceOf[SrxResourceErrorResult]
+    assert(!result.success)
+    assert(result.statusCode == SifHttpStatusCode.BadRequest)
+    assert(result.toXml.isEmpty)
   }
 
   test("update id parameter") {
@@ -114,11 +123,19 @@ class DistrictTests extends FunSuite {
 
   test("update id parameter no contact") {
     val district = District(0, "test UPDATED 2", Some("test code updated"), Some("test zone UPDATED"), None)
-    val result = District.update(district, List[SifRequestParameter](SifRequestParameter("id", createdId.toString)))
+    val result = District.update(district, List[SifRequestParameter](SifRequestParameter("id", createdId2.toString)))
     assert(result.success)
     assert(result.exceptions.isEmpty)
     val resultBody = result.toXml.get.toXmlString
-    assert(resultBody.contains("id=\"%s\"".format(createdId.toString)))
+    assert(resultBody.contains("id=\"%s\"".format(createdId2.toString)))
+  }
+
+  test("update duplicate") {
+    val district = District(0, "test UPDATED 2", None, None, None)
+    val result = District.update(district, List[SifRequestParameter](SifRequestParameter("id", createdId.toString))).asInstanceOf[SrxResourceErrorResult]
+    assert(!result.success)
+    assert(result.statusCode == SifHttpStatusCode.BadRequest)
+    assert(result.toXml.isEmpty)
   }
 
   test("query bad request") {
@@ -140,7 +157,7 @@ class DistrictTests extends FunSuite {
     assert(result.success)
     assert(result.statusCode == SifHttpStatusCode.Ok)
     val resultBody = result.toJson.get.toJsonString
-    assert(resultBody.contains("test UPDATED 2"))
+    assert(resultBody.contains("test UPDATED"))
     assert(resultBody.contains("666-1234"))
   }
 
