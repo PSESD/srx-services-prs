@@ -5,7 +5,7 @@ import org.apache.http.impl.client.{CloseableHttpClient, HttpClients}
 import org.apache.http.util.EntityUtils
 import org.http4s.dsl._
 import org.http4s.{Method, Request}
-import org.psesd.srx.shared.core.CoreResource
+import org.psesd.srx.shared.core.SrxResourceType
 import org.psesd.srx.shared.core.config.Environment
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ExceptionMessage}
 import org.psesd.srx.shared.core.extensions.HttpTypeExtensions._
@@ -83,9 +83,9 @@ class PrsServerTests extends FunSuite {
 
   test("info (localhost)") {
     if (Environment.isLocal) {
-      val sifRequest = new SifRequest(TestValues.sifProvider, CoreResource.Info.toString)
+      val sifRequest = new SifRequest(TestValues.sifProvider, SrxResourceType.Info.toString)
       val response = new SifConsumer().query(sifRequest)
-      printlnResponse(response)
+      // printlnResponse(response)
       val responseBody = response.body.getOrElse("")
       assert(response.statusCode.equals(SifHttpStatusCode.Ok))
       assert(response.contentType.get.equals(SifContentType.Xml))
@@ -101,7 +101,7 @@ class PrsServerTests extends FunSuite {
   test("create authorized entity xml") {
     if (Environment.isLocal) {
       val resource = PrsResource.AuthorizedEntities.toString
-      val authorizedEntity = AuthorizedEntity(1, "test", None)
+      val authorizedEntity = AuthorizedEntity(1, "test xml", None)
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.generatorId = Some(TestValues.generatorId)
       sifRequest.body = Some(authorizedEntity.toXml.toXmlString)
@@ -116,7 +116,7 @@ class PrsServerTests extends FunSuite {
   test("create authorized entity json") {
     if (Environment.isLocal) {
       val resource = PrsResource.AuthorizedEntities.toString
-      val authorizedEntity = AuthorizedEntity(2, "test", None)
+      val authorizedEntity = AuthorizedEntity(2, "test json", None)
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.accept = Some(SifContentType.Json)
       sifRequest.contentType = Some(SifContentType.Json)
@@ -216,7 +216,7 @@ class PrsServerTests extends FunSuite {
   test("create district") {
     if (Environment.isLocal) {
       val resource = PrsResource.Districts.toString
-      val district = District(0, "test", None, None, None)
+      val district = District(0, "prs server test", None, None, None)
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.generatorId = Some(TestValues.generatorId)
       sifRequest.body = Some(district.toXml.toXmlString)
@@ -357,7 +357,7 @@ class PrsServerTests extends FunSuite {
       val resource = PrsResource.DataSets.toString
       val dataSet = DataSet(
         <dataSet>
-          <name>sre</name>
+          <name>prs server sre</name>
           <description>firstName</description>
           <dataObjects>
             <dataObject>
@@ -386,7 +386,7 @@ class PrsServerTests extends FunSuite {
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.body = Some("")
       val thrown = intercept[ArgumentInvalidException] {
-        println("CREATE RESOURCE: %s".format(resource))
+        // println("CREATE RESOURCE: %s".format(resource))
         SifConsumer().create(sifRequest)
       }
       assert(thrown.getMessage.equals(ExceptionMessage.IsInvalid.format("request body")))
@@ -399,9 +399,9 @@ class PrsServerTests extends FunSuite {
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.generatorId = Some(TestValues.generatorId)
       sifRequest.body = Some(<notAnEntity/>.toString)
-      println("CREATE RESOURCE: %s".format(resource))
+      // println("CREATE RESOURCE: %s".format(resource))
       val response = new SifConsumer().create(sifRequest)
-      printlnResponse(response)
+      // printlnResponse(response)
       assert(response.statusCode.equals(SifHttpStatusCode.BadRequest))
       assert((response.getBodyXml.get \ "description").text == "The root element 'notAnEntity' is invalid.")
     }
@@ -415,9 +415,9 @@ class PrsServerTests extends FunSuite {
       val resource = PrsResource.DataSets.toString + "/" + dataSetId.toString + "/" + PrsResource.DataObjects.toString
       val dataObject = DataObject(
         <dataObject>
-          <filterType>test filter</filterType>
-          <sifObjectName>test name</sifObjectName>
-          <includeStatement>test include</includeStatement>
+          <filterType>prs server test2 filter</filterType>
+          <sifObjectName>prs server test2 name</sifObjectName>
+          <includeStatement>prs server test2 include</includeStatement>
         </dataObject>,
         Some(List[SifRequestParameter](SifRequestParameter("dataSetId", dataSetId.toString)))
       )
@@ -487,7 +487,7 @@ class PrsServerTests extends FunSuite {
       val authorizedEntity = AuthorizedEntity((response.getBodyXml.get \ "authorizedEntity").head , None)
       assert(response.statusCode.equals(SifHttpStatusCode.Ok))
       assert(authorizedEntity.id.equals(authorizedEntityIdXml))
-      assert(authorizedEntity.name.equals("test"))
+      assert(authorizedEntity.name.equals("test xml"))
     }
   }
 
@@ -538,7 +538,7 @@ class PrsServerTests extends FunSuite {
       val district = District((response.getBodyXml.get \ "district").head , None)
       assert(response.statusCode.equals(SifHttpStatusCode.Ok))
       assert(district.id.equals(districtId))
-      assert(district.name.equals("test"))
+      assert(district.name.equals("prs server test"))
     }
   }
 
@@ -608,7 +608,7 @@ class PrsServerTests extends FunSuite {
       val dataSet = DataSet((response.getBodyXml.get \ "dataSet").head , None)
       assert(response.statusCode.equals(SifHttpStatusCode.Ok))
       assert(dataSet.id.equals(dataSetId))
-      assert(dataSet.name.equals("sre"))
+      assert(dataSet.name.equals("prs server sre"))
     }
   }
 
@@ -623,9 +623,9 @@ class PrsServerTests extends FunSuite {
       val dataObject = DataObject((response.getBodyXml.get \ "dataObject").head , None)
       assert(response.statusCode.equals(SifHttpStatusCode.Ok))
       assert(dataObject.id.equals(dataObjectId))
-      assert(dataObject.name.equals("test name"))
-      assert(dataObject.filterType.equals("test filter"))
-      assert(dataObject.includeStatement.equals("test include"))
+      assert(dataObject.name.equals("prs server test2 name"))
+      assert(dataObject.filterType.equals("prs server test2 filter"))
+      assert(dataObject.includeStatement.equals("prs server test2 include"))
     }
   }
 
@@ -1170,5 +1170,4 @@ class PrsServerTests extends FunSuite {
     }
     println(response.body.getOrElse(""))
   }
-
 }

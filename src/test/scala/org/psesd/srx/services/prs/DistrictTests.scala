@@ -86,7 +86,7 @@ class DistrictTests extends FunSuite {
 
   test("create") {
     val contact = new Contact(0, Some("jon"), Some("director"), Some("jon@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("jon.com"))
-    val district = District(0, "test", None, None, Some(contact))
+    val district = District(0, "district test", None, None, Some(contact))
     val result = District.create(district, List[SifRequestParameter]()).asInstanceOf[DistrictResult]
     createdId = result.getId
     assert(result.success)
@@ -104,7 +104,7 @@ class DistrictTests extends FunSuite {
   }
 
   test("create duplicate") {
-    val district = District(0, "test", None, None, None)
+    val district = District(0, "district test", None, None, None)
     val result = District.create(district, List[SifRequestParameter]()).asInstanceOf[SrxResourceErrorResult]
     assert(!result.success)
     assert(result.statusCode == SifHttpStatusCode.BadRequest)

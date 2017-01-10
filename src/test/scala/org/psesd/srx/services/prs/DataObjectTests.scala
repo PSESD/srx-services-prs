@@ -11,7 +11,7 @@ class DataObjectTests extends FunSuite with BeforeAndAfterAll {
 
   var createdId: Int = 0
 
-  val dataSet = DataSet(0, "sre", Some("firstName"), None)
+  val dataSet = DataSet(0, "data object test sre", Some("firstName"), None)
   var dataSetResult: DataSetResult = _
 
   override def beforeAll {
@@ -122,8 +122,6 @@ class DataObjectTests extends FunSuite with BeforeAndAfterAll {
     assert(result.statusCode == SifHttpStatusCode.BadRequest)
     assert(result.toXml.isEmpty)
   }
-
-
 
   test("query bad request") {
     val result = DataObject.query(List[SifRequestParameter](SifRequestParameter("id", "abc")))

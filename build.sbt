@@ -4,6 +4,8 @@ version := "1.0"
 
 scalaVersion := "2.11.8"
 
+parallelExecution in Test := false
+
 lazy val apacheCommonsVersion = "2.1"
 lazy val apacheHttpClientVersion = "4.5.2"
 lazy val apachePoiVersion = "3.14"

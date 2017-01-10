@@ -2,7 +2,7 @@ package org.psesd.srx.services.prs
 
 import org.psesd.srx.shared.core.SrxResourceErrorResult
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
-import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestParameter}
+import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestParameter, SifResponse}
 import org.scalatest.FunSuite
 
 class AuthorizedEntityTests extends FunSuite {
@@ -72,7 +72,7 @@ class AuthorizedEntityTests extends FunSuite {
 
   test("create") {
     val contact = new Contact(0, Some("jon"), Some("director"), Some("jon@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("jon.com"))
-    val authorizedEntity = AuthorizedEntity(0, "test", Some(contact))
+    val authorizedEntity = AuthorizedEntity(0, "authorized entity test", Some(contact))
     val result = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
     createdId = result.getId
     assert(result.success)
@@ -90,7 +90,7 @@ class AuthorizedEntityTests extends FunSuite {
   }
 
    test("create duplicate") {
-    val authorizedEntity = AuthorizedEntity(0, "test", None)
+    val authorizedEntity = AuthorizedEntity(0, "authorized entity test", None)
     val result = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[SrxResourceErrorResult]
     assert(!result.success)
     assert(result.statusCode == SifHttpStatusCode.BadRequest)
@@ -166,5 +166,4 @@ class AuthorizedEntityTests extends FunSuite {
     assert(result.success)
     assert(result.statusCode == SifHttpStatusCode.Ok)
   }
-
 }

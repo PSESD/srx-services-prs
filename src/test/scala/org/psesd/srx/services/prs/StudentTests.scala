@@ -5,14 +5,14 @@ import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestParameter}
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
-class StudentTests extends FunSuite with BeforeAndAfterAll{
+class StudentTests extends FunSuite with BeforeAndAfterAll {
 
   var createdId: Int = 0
 
-  val district = District(0, "test", None, None, None)
+  val district = District(0, "district", None, None, None)
   var districtResult: DistrictResult = _
 
-  val authorizedEntity = AuthorizedEntity(0, "test", None)
+  val authorizedEntity = AuthorizedEntity(0, "authorized entity", None)
   var authorizedEntityResult: AuthorizedEntityResult = _
 
   var externalServiceResult: ExternalServiceResult = _
@@ -23,7 +23,7 @@ class StudentTests extends FunSuite with BeforeAndAfterAll{
     districtResult = District.create(district, List[SifRequestParameter]()).asInstanceOf[DistrictResult]
     authorizedEntityResult = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
 
-    val externalService = ExternalService(0, authorizedEntityResult.getId, Some("test"), Some("test service description"))
+    val externalService = ExternalService(0, authorizedEntityResult.getId, Some("external service"), Some("test service description"))
     externalServiceResult = ExternalService.create(externalService, List[SifRequestParameter]()).asInstanceOf[ExternalServiceResult]
 
     val districtService = DistrictService(

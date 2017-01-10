@@ -106,7 +106,7 @@ class DataSetTests extends FunSuite {
 
   test("create") {
     val dataobjects = ArrayBuffer[DataObject](DataObject(0, 0, "test object", "test type", "test include"))
-    val dataSet = DataSet(0, "sre", Some("firstName"), Some(dataobjects))
+    val dataSet = DataSet(0, "data set sre", Some("firstName"), Some(dataobjects))
     val result = DataSet.create(dataSet, List[SifRequestParameter]()).asInstanceOf[DataSetResult]
     createdId = result.getId
     assert(result.success)
@@ -115,7 +115,7 @@ class DataSetTests extends FunSuite {
   }
 
   test("create duplicate") {
-    val dataSet = DataSet(0, "sre", Some("firstName"), None)
+    val dataSet = DataSet(0, "data set sre", Some("firstName"), None)
     val result = DataSet.create(dataSet, List[SifRequestParameter]()).asInstanceOf[SrxResourceErrorResult]
 
     assert(!result.success)
@@ -133,7 +133,7 @@ class DataSetTests extends FunSuite {
   }
 
   test("update duplicate") {
-    val newDataSet = DataSet(0, "sre", Some("firstName"), None)
+    val newDataSet = DataSet(0, "duplicate sre", Some("firstName"), None)
     val newDataSetResult = DataSet.create(newDataSet, List[SifRequestParameter]()).asInstanceOf[DataSetResult]
 
     val updatedDataSet = DataSet(0, "sre UPDATED", Some("firstName UPDATED"), None)

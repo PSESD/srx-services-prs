@@ -2,33 +2,40 @@ package org.psesd.srx.services.prs
 
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestParameter}
-import org.scalatest.FunSuite
+import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
-class ConsentTests extends FunSuite {
+class ConsentTests extends FunSuite with BeforeAndAfterAll {
 
   var createdId: Int = 0
 
-  val districtContact = new Contact(0, Some("jon"), Some("director"), Some("jon@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("jon.com"))
-  val district = District(0, "test", None, None, Some(districtContact))
-  val districtResult = District.create(district, List[SifRequestParameter]()).asInstanceOf[DistrictResult]
+  val district = District(0, "district consent test", None, None, None)
+  var districtResult: DistrictResult = _
 
-  val authorizedEntityContact = new Contact(0, Some("jon"), Some("director"), Some("jon@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("jon.com"))
-  val authorizedEntity = AuthorizedEntity(0, "test", Some(authorizedEntityContact))
-  val authorizedEntityResult = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
+  val authorizedEntity = AuthorizedEntity(0, "authorized entity consent test", None)
+  var authorizedEntityResult: AuthorizedEntityResult = _
 
-  val externalService = ExternalService(0, authorizedEntityResult.getId, Some("test"), Some("test service description"))
-  val externalServiceResult = ExternalService.create(externalService, List[SifRequestParameter]()).asInstanceOf[ExternalServiceResult]
+  var externalServiceResult: ExternalServiceResult = _
 
-  val districtService = DistrictService(
-    <districtService>
-      <externalServiceId>{externalServiceResult.getId}</externalServiceId>
-      <initiationDate>2016-01-01</initiationDate>
-      <expirationDate>2017-01-01</expirationDate>
-      <requiresPersonnel>true</requiresPersonnel>
-    </districtService>,
-    Some(List[SifRequestParameter](SifRequestParameter("districtId", {districtResult.getId.toString})))
-  )
-  val districtServiceResult = DistrictService.create(districtService, List[SifRequestParameter]()).asInstanceOf[DistrictServiceResult]
+  var districtServiceResult: DistrictServiceResult = _
+
+  override def beforeAll: Unit = {
+    districtResult = District.create(district, List[SifRequestParameter]()).asInstanceOf[DistrictResult]
+    authorizedEntityResult = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
+
+    val externalService = ExternalService(0, authorizedEntityResult.getId, Some("external service test"), Some("test service description"))
+    externalServiceResult = ExternalService.create(externalService, List[SifRequestParameter]()).asInstanceOf[ExternalServiceResult]
+
+    val districtService = DistrictService(
+      <districtService>
+        <externalServiceId>{externalServiceResult.getId}</externalServiceId>
+        <initiationDate>2016-01-01</initiationDate>
+        <expirationDate>2017-01-01</expirationDate>
+        <requiresPersonnel>true</requiresPersonnel>
+      </districtService>,
+      Some(List[SifRequestParameter](SifRequestParameter("districtId", {districtResult.getId.toString})))
+    )
+    districtServiceResult = DistrictService.create(districtService, List[SifRequestParameter]()).asInstanceOf[DistrictServiceResult]
+  }
 
   test("constructor") {
     val id = 123
@@ -149,6 +156,13 @@ class ConsentTests extends FunSuite {
     val result = Consent.delete(List[SifRequestParameter](SifRequestParameter("id", createdId.toString)))
     assert(result.success)
     assert(result.statusCode == SifHttpStatusCode.Ok)
+  }
+
+  override def afterAll: Unit = {
+    District.delete(List[SifRequestParameter](SifRequestParameter("id", districtResult.getId.toString)))
+    AuthorizedEntity.delete(List[SifRequestParameter](SifRequestParameter("id", authorizedEntityResult.getId.toString)))
+    ExternalService.delete(List[SifRequestParameter](SifRequestParameter("id", externalServiceResult.getId.toString)))
+    DistrictService.delete(List[SifRequestParameter](SifRequestParameter("id", districtServiceResult.getId.toString)))
   }
 
 }

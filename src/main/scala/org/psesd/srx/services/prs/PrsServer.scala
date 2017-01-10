@@ -70,10 +70,10 @@ object PrsServer extends SrxServer {
     case _ -> Root =>
       NotImplemented()
 
-    case req@GET -> Root / _ if services(req, CoreResource.Ping.toString) =>
+    case req@GET -> Root / _ if services(req, SrxResourceType.Ping.toString) =>
       Ok(true.toString)
 
-    case req@GET -> Root / _ if services(req, CoreResource.Info.toString) =>
+    case req@GET -> Root / _ if services(req, SrxResourceType.Info.toString) =>
       respondWithInfo(getDefaultSrxResponse(req))
 
 

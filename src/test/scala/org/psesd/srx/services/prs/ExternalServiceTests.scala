@@ -10,7 +10,7 @@ class ExternalServiceTests extends FunSuite with BeforeAndAfterAll {
 
   var createdId: Int = 0
 
-  val authorizedEntity: AuthorizedEntity = AuthorizedEntity(0, "test", None)
+  val authorizedEntity: AuthorizedEntity = AuthorizedEntity(0, "external service test", None)
   var authorizedEntityResult: AuthorizedEntityResult = _
 
   override def beforeAll {

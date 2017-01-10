@@ -2,15 +2,18 @@ package org.psesd.srx.services.prs
 
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestParameter}
-import org.scalatest.FunSuite
+import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
-class PersonnelTests extends FunSuite {
+class PersonnelTests extends FunSuite with BeforeAndAfterAll {
 
   var createdId: Int = 0
 
-  val contact = new Contact(0, Some("jon"), Some("director"), Some("jon@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("jon.com"))
-  val authorizedEntity = AuthorizedEntity(0, "test", Some(contact))
-  val authorizedEntityResult = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
+  val authorizedEntity = AuthorizedEntity(0, "auth entity personnel test", None)
+  var authorizedEntityResult: AuthorizedEntityResult = _
+
+  override def beforeAll {
+    authorizedEntityResult = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
+  }
 
   test("constructor") {
     val id = 123
@@ -104,6 +107,10 @@ class PersonnelTests extends FunSuite {
     val result = Personnel.delete(List[SifRequestParameter](SifRequestParameter("id", createdId.toString)))
     assert(result.success)
     assert(result.statusCode == SifHttpStatusCode.Ok)
+  }
+
+  override def afterAll {
+    AuthorizedEntity.delete(List[SifRequestParameter](SifRequestParameter("id", authorizedEntityResult.getId.toString)))
   }
 
 }

@@ -13,22 +13,22 @@ class DistrictServiceTests extends FunSuite with BeforeAndAfterAll {
 
   var createdId: Int = 0
 
-  val district: District = District(0, "test", None, None, None)
+  val district: District = District(0, "district service test", None, None, None)
   var districtResult: DistrictResult = _
 
-  val authorizedEntity: AuthorizedEntity = AuthorizedEntity(0, "test", None)
+  val authorizedEntity: AuthorizedEntity = AuthorizedEntity(0, "district service test", None)
   var authorizedEntityResult: AuthorizedEntityResult = _
 
   var externalServiceResult: ExternalServiceResult = _
 
-  val dataSet: DataSet = DataSet(0, "sre", Some("firstName"), None)
+  val dataSet: DataSet = DataSet(0, "district service sre", Some("firstName"), None)
   var dataSetResult: DataSetResult = _
 
   override def beforeAll {
     districtResult = District.create(district, List[SifRequestParameter]()).asInstanceOf[DistrictResult]
     authorizedEntityResult = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
 
-    val externalService: ExternalService = ExternalService(0, authorizedEntityResult.getId, Some("test"), Some("test service description"))
+    val externalService: ExternalService = ExternalService(0, authorizedEntityResult.getId, Some("district service test"), Some("test service description"))
     externalServiceResult = ExternalService.create(externalService, List[SifRequestParameter]()).asInstanceOf[ExternalServiceResult]
 
     dataSetResult = DataSet.create(dataSet, List[SifRequestParameter]()).asInstanceOf[DataSetResult]
