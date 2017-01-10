@@ -13,7 +13,7 @@ class ExternalServiceTests extends FunSuite with BeforeAndAfterAll {
   val authorizedEntity: AuthorizedEntity = AuthorizedEntity(0, "external service test", None)
   var authorizedEntityResult: AuthorizedEntityResult = _
 
-  override def beforeAll {
+  override def beforeAll: Unit = {
     authorizedEntityResult = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
   }
 
@@ -133,7 +133,7 @@ class ExternalServiceTests extends FunSuite with BeforeAndAfterAll {
     assert(result.statusCode == SifHttpStatusCode.Ok)
   }
 
-  override def afterAll {
+  override def afterAll: Unit = {
     AuthorizedEntity.delete(List[SifRequestParameter](SifRequestParameter("id", authorizedEntityResult.getId.toString)))
   }
 }
