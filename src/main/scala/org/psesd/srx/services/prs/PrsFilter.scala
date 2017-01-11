@@ -132,9 +132,9 @@ object PrsFilter extends PrsEntityService {
 
       val acceptParam = parameters.find(p => p.key.toLowerCase == AcceptParameter.toLowerCase)
       if (acceptParam.isDefined && !acceptParam.get.value.isNullOrEmpty) {
-        val acceptInput = acceptParam.get.value
-        if (acceptInput.toLowerCase == "json" || acceptInput.toLowerCase == "application/json") {
-          throw new SifHeaderInvalidException(AcceptParameter, acceptInput)
+        accept = acceptParam.get.value
+        if (accept.toLowerCase == "json" || accept.toLowerCase == "application/json") {
+          throw new SifHeaderInvalidException(AcceptParameter, accept)
         }
       }
 
