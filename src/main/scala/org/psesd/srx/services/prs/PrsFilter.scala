@@ -1,7 +1,7 @@
 package org.psesd.srx.services.prs
 
 import org.json4s.JValue
-import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException}
+import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SifHeaderInvalidException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
 import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestAction, SifRequestParameter}
@@ -63,6 +63,7 @@ object PrsFilter extends PrsEntityService {
   final val ObjectTypeParameter = "objectType"
   final val PersonnelIdParameter = "personnelId"
   final val ZoneIdParameter = "zoneId"
+  final val AcceptParameter = "accept"
 
   def apply(node: Node): PrsFilter = new PrsFilter(node)
 
@@ -91,6 +92,8 @@ object PrsFilter extends PrsEntityService {
     try {
       getFilterSet(parameters)
     } catch {
+      case e: SifHeaderInvalidException =>
+        SrxResourceErrorResult(SifHttpStatusCode.BadRequest, e)
       case e: Exception =>
         SrxResourceErrorResult(SifHttpStatusCode.InternalServerError, e)
     }
@@ -103,6 +106,7 @@ object PrsFilter extends PrsEntityService {
     var objectType: String = null
     var personnelId: String = null
     var zoneId: String = null
+    var accept: String = null
 
     try {
       if (parameters == null) {
@@ -125,6 +129,14 @@ object PrsFilter extends PrsEntityService {
 
       val zoneIdParam = parameters.find(p => p.key.toLowerCase == ZoneIdParameter.toLowerCase)
       zoneId = if (zoneIdParam.isDefined && !zoneIdParam.get.value.isNullOrEmpty) zoneIdParam.get.value else throw new ArgumentInvalidException(ZoneIdParameter + " parameter")
+
+      val acceptParam = parameters.find(p => p.key.toLowerCase == AcceptParameter.toLowerCase)
+      if (acceptParam.isDefined && !acceptParam.get.value.isNullOrEmpty) {
+        val acceptInput = acceptParam.get.value
+        if (acceptInput.toLowerCase == "json" || acceptInput.toLowerCase == "application/json") {
+          throw new SifHeaderInvalidException(AcceptParameter, acceptInput)
+        }
+      }
 
       try {
         val datasource = new Datasource(datasourceConfig)
