@@ -1140,9 +1140,9 @@ class PrsServerTests extends FunSuite {
       sifRequest.addHeader("externalServiceId", "2")
       sifRequest.addHeader("objectType", "sre")
       sifRequest.addHeader("personnelId", "3")
-       println("QUERY RESOURCE: %s".format(resource))
+      // println("QUERY RESOURCE: %s".format(resource))
       val response = new SifConsumer().query(sifRequest)
-       printlnResponse(response)
+      // printlnResponse(response)
       assert(response.statusCode.equals(SifHttpStatusCode.BadRequest))
     }
   }
