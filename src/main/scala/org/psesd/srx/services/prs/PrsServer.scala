@@ -344,6 +344,7 @@ object PrsServer extends SrxServer {
       if(headerName == PrsFilter.ExternalServiceIdParameter.toLowerCase) params += SifRequestParameter(PrsFilter.ExternalServiceIdParameter, h.value)
       if(headerName == PrsFilter.ObjectTypeParameter.toLowerCase) params += SifRequestParameter(PrsFilter.ObjectTypeParameter, h.value)
       if(headerName == PrsFilter.PersonnelIdParameter.toLowerCase) params += SifRequestParameter(PrsFilter.PersonnelIdParameter, h.value)
+      if(headerName == SifHeader.Accept.toString.toLowerCase) params += SifRequestParameter(SifHeader.Accept.toString, h.value)
     }
     Some(params.toList)
   }

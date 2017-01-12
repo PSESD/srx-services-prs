@@ -13,5 +13,4 @@ object TestValues {
   lazy val timestamp: SifTimestamp = SifTimestamp("2015-02-24T20:51:59.878Z")
   lazy val authorization = new SifAuthorization(sifProvider, timestamp)
   lazy val generatorId = "srx-services-prs test"
-
 }
