@@ -10,6 +10,7 @@ import org.psesd.srx.shared.core.config.Environment
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ExceptionMessage}
 import org.psesd.srx.shared.core.extensions.HttpTypeExtensions._
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
+import org.psesd.srx.shared.core.sif.SifContentType.SifContentType
 import org.psesd.srx.shared.core.sif._
 import org.scalatest.FunSuite
 
@@ -988,23 +989,6 @@ class PrsServerTests extends FunSuite {
     }
   }
 
-  test("query filters") {
-    if (Environment.isLocal) {
-      val resource = PrsResource.Filters.toString
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource, SifZone("highline"), SifContext("default"))
-      sifRequest.generatorId = Some(TestValues.generatorId)
-      sifRequest.addHeader("authorizedEntityId", "1")
-      sifRequest.addHeader("districtStudentId", "9999999999")
-      sifRequest.addHeader("externalServiceId", "2")
-      sifRequest.addHeader("objectType", "sre")
-      sifRequest.addHeader("personnelId", "3")
-      // println("QUERY RESOURCE: %s".format(resource))
-      val response = new SifConsumer().query(sifRequest)
-      // printlnResponse(response)
-      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
-    }
-  }
-
 
   /* DELETE */
 
@@ -1141,6 +1125,45 @@ class PrsServerTests extends FunSuite {
       assert(response.statusCode.equals(SifHttpStatusCode.Ok))
     }
   }
+
+
+  /* FILTERS */
+
+  test("query filters json") {
+    if (Environment.isLocal) {
+      val resource = PrsResource.Filters.toString
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource, SifZone("highline"), SifContext("default"))
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      sifRequest.accept = Some(SifContentType.Json)
+      sifRequest.addHeader("authorizedEntityId", "1")
+      sifRequest.addHeader("districtStudentId", "9999999999")
+      sifRequest.addHeader("externalServiceId", "2")
+      sifRequest.addHeader("objectType", "sre")
+      sifRequest.addHeader("personnelId", "3")
+       println("QUERY RESOURCE: %s".format(resource))
+      val response = new SifConsumer().query(sifRequest)
+       printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.BadRequest))
+    }
+  }
+
+  test("query filters") {
+    if (Environment.isLocal) {
+      val resource = PrsResource.Filters.toString
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource, SifZone("highline"), SifContext("default"))
+      sifRequest.generatorId = Some(TestValues.generatorId)
+      sifRequest.addHeader("authorizedEntityId", "1")
+      sifRequest.addHeader("districtStudentId", "9999999999")
+      sifRequest.addHeader("externalServiceId", "2")
+      sifRequest.addHeader("objectType", "sre")
+      sifRequest.addHeader("personnelId", "3")
+      // println("QUERY RESOURCE: %s".format(resource))
+      val response = new SifConsumer().query(sifRequest)
+      // printlnResponse(response)
+      assert(response.statusCode.equals(SifHttpStatusCode.Ok))
+    }
+  }
+
 
   private def delayedInterrupt(delay: Long) {
     delayedInterrupt(Thread.currentThread, delay)
