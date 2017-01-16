@@ -349,4 +349,30 @@ object PrsServer extends SrxServer {
     Some(params.toList)
   }
 
+  def logPrsMessage(resource: String, method: String, resourceId: Option[String], parameters: SifRequestParameterCollection, requestBody: Option[String]) : SifResponse = {
+    val zoneId = if (parameters("zoneId").isDefined) Some(SifZone(parameters("zoneId").get)) else None
+    val message = SrxMessage(
+      srxService,
+      SifMessageId(),
+      SifTimestamp(),
+      Some(resource),
+      Some(method),
+      Some(SrxMessageStatus.Success.toString),
+      parameters("generatorId"),
+      parameters("requestId"),
+      zoneId, {
+        if (parameters("contextId").isDefined) Some(SifContext(parameters("contextId").get)) else None
+      },
+      Some(resourceId.getOrElse("")),
+      "%s successful for '%s' '%s' in zone '%s'.".format(method, resource, resourceId.getOrElse(""), zoneId.getOrElse("")),
+      parameters("uri"),
+      parameters("userAgent"),
+      parameters("sourceIp"),
+      Some(parameters.getHeaders()),
+      requestBody
+    )
+
+    SrxMessageService.createMessage(parameters("generatorId").getOrElse(""), message)
+  }
+
 }

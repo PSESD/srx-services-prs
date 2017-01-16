@@ -7,7 +7,7 @@ import org.psesd.srx.shared.core._
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
-import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestAction, SifRequestParameter}
+import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestAction, SifRequestParameter, SifRequestParameterCollection}
 import org.psesd.srx.shared.data.exceptions.DatasourceDuplicateViolationException
 import org.psesd.srx.shared.data.{Datasource, DatasourceResult}
 
@@ -171,6 +171,13 @@ object AuthorizedEntity extends PrsEntityService {
       datasource.close()
 
       if (result.success) {
+        PrsServer.logPrsMessage(
+          PrsResource.AuthorizedEntities.toString,
+          SifRequestAction.Create.toString,
+          result.id,
+          SifRequestParameterCollection(parameters),
+          Some(authorizedEntity.toXml.toXmlString)
+        )
         val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
         if(responseFormat.equals(SrxResponseFormat.Object)) {
           val queryResult = executeQuery(Some(result.id.get.toInt))
@@ -219,6 +226,13 @@ object AuthorizedEntity extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
+          PrsServer.logPrsMessage(
+            PrsResource.AuthorizedEntities.toString,
+            SifRequestAction.Delete.toString,
+            Some(id.get.toString),
+            SifRequestParameterCollection(parameters),
+            None
+          )
           val aeResult = new AuthorizedEntityResult(
             SifRequestAction.Delete,
             SifRequestAction.getSuccessStatusCode(SifRequestAction.Delete),
@@ -244,7 +258,15 @@ object AuthorizedEntity extends PrsEntityService {
     } else {
       try {
         val result = executeQuery(id)
+        val resourceId = if (id.isEmpty) Some("all") else Some(id.get.toString)
         if (result.success) {
+          PrsServer.logPrsMessage(
+            PrsResource.AuthorizedEntities.toString,
+            SifRequestAction.Query.toString,
+            resourceId,
+            SifRequestParameterCollection(parameters),
+            None
+          )
           if (id.isDefined && result.rows.isEmpty) {
             SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.AuthorizedEntities.toString))
           } else {
@@ -347,6 +369,13 @@ object AuthorizedEntity extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
+          PrsServer.logPrsMessage(
+            PrsResource.AuthorizedEntities.toString,
+            SifRequestAction.Update.toString,
+            Some(id.get.toString),
+            SifRequestParameterCollection(parameters),
+            None //todo: what should the request body be?
+          )
           val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
           var aeResult: AuthorizedEntityResult = null
           if(responseFormat.equals(SrxResponseFormat.Object)) {
