@@ -171,7 +171,7 @@ object AuthorizedEntity extends PrsEntityService {
       datasource.close()
 
       if (result.success) {
-        PrsServer.logPrsMessage(
+        PrsServer.logPrsSuccessMessage(
           PrsResource.AuthorizedEntities.toString,
           SifRequestAction.Create.toString,
           result.id,
@@ -226,7 +226,7 @@ object AuthorizedEntity extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          PrsServer.logPrsMessage(
+          PrsServer.logPrsSuccessMessage(
             PrsResource.AuthorizedEntities.toString,
             SifRequestAction.Delete.toString,
             Some(id.get.toString),
@@ -260,16 +260,23 @@ object AuthorizedEntity extends PrsEntityService {
         val result = executeQuery(id)
         if (result.success) {
           val resourceId = if (id.isEmpty) Some("all") else Some(id.get.toString)
-          PrsServer.logPrsMessage(
-            PrsResource.AuthorizedEntities.toString,
-            SifRequestAction.Query.toString,
-            resourceId,
-            SifRequestParameterCollection(parameters),
-            None
-          )
           if (id.isDefined && result.rows.isEmpty) {
+            PrsServer.logPrsNotFoundMessage(
+              PrsResource.AuthorizedEntities.toString,
+              SifRequestAction.Query.toString,
+              resourceId,
+              SifRequestParameterCollection(parameters),
+              None
+            )
             SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.AuthorizedEntities.toString))
           } else {
+            PrsServer.logPrsSuccessMessage(
+              PrsResource.AuthorizedEntities.toString,
+              SifRequestAction.Query.toString,
+              resourceId,
+              SifRequestParameterCollection(parameters),
+              None
+            )
             new AuthorizedEntityResult(
               SifRequestAction.Query,
               SifHttpStatusCode.Ok,
@@ -369,7 +376,7 @@ object AuthorizedEntity extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          PrsServer.logPrsMessage(
+          PrsServer.logPrsSuccessMessage(
             PrsResource.AuthorizedEntities.toString,
             SifRequestAction.Update.toString,
             Some(id.get.toString),

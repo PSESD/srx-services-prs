@@ -192,7 +192,7 @@ object District extends PrsEntityService {
       datasource.close()
 
       if (result.success) {
-        PrsServer.logPrsMessage(
+        PrsServer.logPrsSuccessMessage(
           PrsResource.Districts.toString,
           SifRequestAction.Create.toString,
           result.id,
@@ -247,7 +247,7 @@ object District extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          PrsServer.logPrsMessage(
+          PrsServer.logPrsSuccessMessage(
             PrsResource.Districts.toString,
             SifRequestAction.Delete.toString,
             Some(id.get.toString),
@@ -281,16 +281,23 @@ object District extends PrsEntityService {
         val result = executeQuery(id)
         if (result.success) {
           val resourceId = if (id.isEmpty) Some("all") else Some(id.get.toString)
-          PrsServer.logPrsMessage(
-            PrsResource.Districts.toString,
-            SifRequestAction.Query.toString,
-            resourceId,
-            SifRequestParameterCollection(parameters),
-            None
-          )
           if (id.isDefined && result.rows.isEmpty) {
+            PrsServer.logPrsNotFoundMessage(
+              PrsResource.Districts.toString,
+              SifRequestAction.Query.toString,
+              resourceId,
+              SifRequestParameterCollection(parameters),
+              None
+            )
             SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.Districts.toString))
           } else {
+            PrsServer.logPrsSuccessMessage(
+              PrsResource.Districts.toString,
+              SifRequestAction.Query.toString,
+              resourceId,
+              SifRequestParameterCollection(parameters),
+              None
+            )
             new DistrictResult(
               SifRequestAction.Query,
               SifHttpStatusCode.Ok,
@@ -402,7 +409,7 @@ object District extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          PrsServer.logPrsMessage(
+          PrsServer.logPrsSuccessMessage(
             PrsResource.Districts.toString,
             SifRequestAction.Update.toString,
             Some(id.get.toString),

@@ -151,16 +151,23 @@ object PrsFilter extends PrsEntityService {
         )
         datasource.close()
         if (result.success) {
-          PrsServer.logPrsMessage(
-            PrsResource.Filters.toString,
-            SifRequestAction.Query.toString,
-            Some(districtStudentId),
-            SifRequestParameterCollection(parameters),
-            None
-          )
           if(result.rows.isEmpty) {
+            PrsServer.logPrsNotFoundMessage(
+              PrsResource.Filters.toString,
+              SifRequestAction.Query.toString,
+              Some(districtStudentId),
+              SifRequestParameterCollection(parameters),
+              None
+            )
             SrxResourceErrorResult(SifHttpStatusCode.NotFound, new Exception("Filters for student '%s' not found.".format(districtStudentId)))
           } else {
+            PrsServer.logPrsSuccessMessage(
+              PrsResource.Filters.toString,
+              SifRequestAction.Query.toString,
+              Some(districtStudentId),
+              SifRequestParameterCollection(parameters),
+              None
+            )
             new PrsFilterResult(
               SifRequestAction.Query,
               SifHttpStatusCode.Ok,

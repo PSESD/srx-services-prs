@@ -142,7 +142,7 @@ object DataSet extends PrsEntityService {
       datasource.close()
 
       if (result.success) {
-        PrsServer.logPrsMessage(
+        PrsServer.logPrsSuccessMessage(
           PrsResource.DataSets.toString,
           SifRequestAction.Create.toString,
           result.id,
@@ -198,7 +198,7 @@ object DataSet extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          PrsServer.logPrsMessage(
+          PrsServer.logPrsSuccessMessage(
             PrsResource.DataSets.toString,
             SifRequestAction.Delete.toString,
             Some(id.get.toString),
@@ -232,16 +232,23 @@ object DataSet extends PrsEntityService {
         val result = executeQuery(id)
         if (result.success) {
           val resourceId = if (id.isEmpty) Some("all") else Some(id.get.toString)
-          PrsServer.logPrsMessage(
-            PrsResource.DataSets.toString,
-            SifRequestAction.Query.toString,
-            resourceId,
-            SifRequestParameterCollection(parameters),
-            None
-          )
           if (id.isDefined && result.rows.isEmpty) {
+            PrsServer.logPrsNotFoundMessage(
+              PrsResource.DataSets.toString,
+              SifRequestAction.Query.toString,
+              resourceId,
+              SifRequestParameterCollection(parameters),
+              None
+            )
             SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.DataSets.toString))
           } else {
+            PrsServer.logPrsSuccessMessage(
+              PrsResource.DataSets.toString,
+              SifRequestAction.Query.toString,
+              resourceId,
+              SifRequestParameterCollection(parameters),
+              None
+            )
             new DataSetResult(
               SifRequestAction.Query,
               SifHttpStatusCode.Ok,
@@ -341,7 +348,7 @@ object DataSet extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          PrsServer.logPrsMessage(
+          PrsServer.logPrsSuccessMessage(
             PrsResource.DataSets.toString,
             SifRequestAction.Update.toString,
             Some(id.get.toString),

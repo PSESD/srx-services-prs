@@ -152,7 +152,7 @@ object Student extends PrsEntityService {
       datasource.close()
 
       if (result.success) {
-        PrsServer.logPrsMessage(
+        PrsServer.logPrsSuccessMessage(
           PrsResource.DistrictServiceStudents.toString,
           SifRequestAction.Create.toString,
           result.id,
@@ -207,7 +207,7 @@ object Student extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          PrsServer.logPrsMessage(
+          PrsServer.logPrsSuccessMessage(
             PrsResource.DistrictServiceStudents.toString,
             SifRequestAction.Delete.toString,
             Some(id.get.toString),
@@ -254,16 +254,24 @@ object Student extends PrsEntityService {
               resource = PrsResource.DistrictStudents.toString
               resourceId = Some("all")
             }
-            PrsServer.logPrsMessage(
-              resource,
-              SifRequestAction.Query.toString,
-              resourceId,
-              SifRequestParameterCollection(parameters),
-              None
-            )
+
             if (id.isDefined && result.rows.isEmpty) {
+              PrsServer.logPrsNotFoundMessage(
+                resource,
+                SifRequestAction.Query.toString,
+                resourceId,
+                SifRequestParameterCollection(parameters),
+                None
+              )
               SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.Students.toString))
             } else {
+              PrsServer.logPrsSuccessMessage(
+                resource,
+                SifRequestAction.Query.toString,
+                resourceId,
+                SifRequestParameterCollection(parameters),
+                None
+              )
               new StudentResult(
                 SifRequestAction.Query,
                 SifHttpStatusCode.Ok,
@@ -366,7 +374,7 @@ object Student extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          PrsServer.logPrsMessage(
+          PrsServer.logPrsSuccessMessage(
             PrsResource.DistrictServiceStudents.toString,
             SifRequestAction.Update.toString,
             Some(id.get.toString),

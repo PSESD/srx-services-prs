@@ -127,7 +127,7 @@ object ExternalService extends PrsEntityService {
       datasource.close()
 
       if (result.success) {
-        PrsServer.logPrsMessage(
+        PrsServer.logPrsSuccessMessage(
           PrsResource.ExternalServices.toString,
           SifRequestAction.Create.toString,
           result.id,
@@ -178,7 +178,7 @@ object ExternalService extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          PrsServer.logPrsMessage(
+          PrsServer.logPrsSuccessMessage(
             PrsResource.ExternalServices.toString,
             SifRequestAction.Delete.toString,
             Some(id.get.toString),
@@ -212,16 +212,23 @@ object ExternalService extends PrsEntityService {
         val result = executeQuery(id)
         if (result.success) {
           val resourceId = if (id.isEmpty) Some("all") else Some(id.get.toString)
-          PrsServer.logPrsMessage(
-            PrsResource.ExternalServices.toString,
-            SifRequestAction.Query.toString,
-            resourceId,
-            SifRequestParameterCollection(parameters),
-            None
-          )
           if (id.isDefined && result.rows.isEmpty) {
+            PrsServer.logPrsNotFoundMessage(
+              PrsResource.ExternalServices.toString,
+              SifRequestAction.Query.toString,
+              resourceId,
+              SifRequestParameterCollection(parameters),
+              None
+            )
             SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.ExternalServices.toString))
           } else {
+            PrsServer.logPrsSuccessMessage(
+              PrsResource.ExternalServices.toString,
+              SifRequestAction.Query.toString,
+              resourceId,
+              SifRequestParameterCollection(parameters),
+              None
+            )
             new ExternalServiceResult(
               SifRequestAction.Query,
               SifHttpStatusCode.Ok,
@@ -284,7 +291,7 @@ object ExternalService extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          PrsServer.logPrsMessage(
+          PrsServer.logPrsSuccessMessage(
             PrsResource.ExternalServices.toString,
             SifRequestAction.Update.toString,
             Some(id.get.toString),
