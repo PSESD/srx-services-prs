@@ -258,8 +258,8 @@ object AuthorizedEntity extends PrsEntityService {
     } else {
       try {
         val result = executeQuery(id)
-        val resourceId = if (id.isEmpty) Some("all") else Some(id.get.toString)
         if (result.success) {
+          val resourceId = if (id.isEmpty) Some("all") else Some(id.get.toString)
           PrsServer.logPrsMessage(
             PrsResource.AuthorizedEntities.toString,
             SifRequestAction.Query.toString,
@@ -374,7 +374,7 @@ object AuthorizedEntity extends PrsEntityService {
             SifRequestAction.Update.toString,
             Some(id.get.toString),
             SifRequestParameterCollection(parameters),
-            None //todo: what should the request body be?
+            Some(authorizedEntity.toXml.toXmlString)
           )
           val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
           var aeResult: AuthorizedEntityResult = null

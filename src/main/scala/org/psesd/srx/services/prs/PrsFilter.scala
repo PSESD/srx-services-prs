@@ -4,7 +4,7 @@ import org.json4s.JValue
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SifHeaderInvalidException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
-import org.psesd.srx.shared.core.sif.{SifHeader, SifHttpStatusCode, SifRequestAction, SifRequestParameter}
+import org.psesd.srx.shared.core.sif.{SifHeader, SifHttpStatusCode, SifRequestAction, SifRequestParameter, SifRequestParameterCollection}
 import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
 import org.psesd.srx.shared.core.{SrxResource, SrxResourceErrorResult, SrxResourceResult, SrxResponseFormat}
 import org.psesd.srx.shared.data.{Datasource, DatasourceResult}
@@ -151,6 +151,13 @@ object PrsFilter extends PrsEntityService {
         )
         datasource.close()
         if (result.success) {
+          PrsServer.logPrsMessage(
+            PrsResource.Filters.toString,
+            SifRequestAction.Query.toString,
+            Some(districtStudentId),
+            SifRequestParameterCollection(parameters),
+            None
+          )
           if(result.rows.isEmpty) {
             SrxResourceErrorResult(SifHttpStatusCode.NotFound, new Exception("Filters for student '%s' not found.".format(districtStudentId)))
           } else {

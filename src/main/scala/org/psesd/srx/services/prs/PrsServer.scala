@@ -358,21 +358,21 @@ object PrsServer extends SrxServer {
       Some(resource),
       Some(method),
       Some(SrxMessageStatus.Success.toString),
-      parameters("generatorId"),
-      parameters("requestId"),
+      parameters(SifHeader.GeneratorId.toString),
+      parameters(SifHeader.RequestId.toString),
       zoneId, {
         if (parameters("contextId").isDefined) Some(SifContext(parameters("contextId").get)) else None
       },
       Some(resourceId.getOrElse("")),
       "%s successful for '%s' '%s' in zone '%s'.".format(method, resource, resourceId.getOrElse(""), zoneId.getOrElse("")),
       parameters("uri"),
-      parameters("userAgent"),
-      parameters("sourceIp"),
+      parameters(SifHttpHeader.UserAgent.toString),
+      parameters(SifHttpHeader.ForwardedFor.toString),
       Some(parameters.getHeaders()),
       requestBody
     )
 
-    SrxMessageService.createMessage(parameters("generatorId").getOrElse(""), message)
+    SrxMessageService.createMessage(parameters(SifHeader.GeneratorId.toString).getOrElse(""), message)
   }
 
 }
