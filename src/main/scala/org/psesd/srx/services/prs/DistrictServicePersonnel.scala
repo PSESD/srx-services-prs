@@ -123,7 +123,7 @@ object DistrictServicePersonnel extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          PrsServer.logPrsMessage(
+          PrsServer.logPrsSuccessMessage(
             PrsResource.DistrictServicePersonnel.toString,
             SifRequestAction.Create.toString,
             result.id,
@@ -173,7 +173,7 @@ object DistrictServicePersonnel extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          PrsServer.logPrsMessage(
+          PrsServer.logPrsSuccessMessage(
             PrsResource.DistrictServicePersonnel.toString,
             SifRequestAction.Delete.toString,
             Some(id.get.toString),
@@ -211,16 +211,23 @@ object DistrictServicePersonnel extends PrsEntityService {
           val result = executeQuery(id, districtServiceIdParam)
           if (result.success) {
             val resourceId = if (id.isEmpty) Some("all") else Some(id.get.toString)
-            PrsServer.logPrsMessage(
-              PrsResource.DistrictServicePersonnel.toString,
-              SifRequestAction.Query.toString,
-              resourceId,
-              SifRequestParameterCollection(parameters),
-              None
-            )
             if (id.isDefined && result.rows.isEmpty) {
+              PrsServer.logPrsNotFoundMessage(
+                PrsResource.DistrictServicePersonnel.toString,
+                SifRequestAction.Query.toString,
+                resourceId,
+                SifRequestParameterCollection(parameters),
+                None
+              )
               SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.Personnel.toString))
             } else {
+              PrsServer.logPrsSuccessMessage(
+                PrsResource.DistrictServicePersonnel.toString,
+                SifRequestAction.Query.toString,
+                resourceId,
+                SifRequestParameterCollection(parameters),
+                None
+              )
               new DistrictServicePersonnelResult(
                 SifRequestAction.Query,
                 SifHttpStatusCode.Ok,
@@ -291,7 +298,7 @@ object DistrictServicePersonnel extends PrsEntityService {
           datasource.close()
 
           if (result.success) {
-            PrsServer.logPrsMessage(
+            PrsServer.logPrsSuccessMessage(
               PrsResource.DistrictServicePersonnel.toString,
               SifRequestAction.Update.toString,
               Some(id.get.toString),
