@@ -6,7 +6,7 @@ import org.psesd.srx.shared.core._
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
-import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestAction, SifRequestParameter}
+import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestAction, SifRequestParameter, SifRequestParameterCollection}
 import org.psesd.srx.shared.data.exceptions.DatasourceDuplicateViolationException
 import org.psesd.srx.shared.data.{Datasource, DatasourceResult}
 
@@ -127,6 +127,13 @@ object ExternalService extends PrsEntityService {
       datasource.close()
 
       if (result.success) {
+        PrsServer.logSuccessMessage(
+          PrsResource.ExternalServices.toString,
+          SifRequestAction.Create.toString,
+          result.id,
+          SifRequestParameterCollection(parameters),
+          Some(externalService.toXml.toXmlString)
+        )
         val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
         if(responseFormat.equals(SrxResponseFormat.Object)) {
           val queryResult = executeQuery(Some(result.id.get.toInt))
@@ -171,6 +178,13 @@ object ExternalService extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
+          PrsServer.logSuccessMessage(
+            PrsResource.ExternalServices.toString,
+            SifRequestAction.Delete.toString,
+            Some(id.get.toString),
+            SifRequestParameterCollection(parameters),
+            None
+          )
           val esResult = new ExternalServiceResult(
             SifRequestAction.Delete,
             SifRequestAction.getSuccessStatusCode(SifRequestAction.Delete),
@@ -197,9 +211,24 @@ object ExternalService extends PrsEntityService {
       try {
         val result = executeQuery(id)
         if (result.success) {
+          val resourceId = if (id.isEmpty) Some("all") else Some(id.get.toString)
           if (id.isDefined && result.rows.isEmpty) {
+            PrsServer.logNotFoundMessage(
+              PrsResource.ExternalServices.toString,
+              SifRequestAction.Query.toString,
+              resourceId,
+              SifRequestParameterCollection(parameters),
+              None
+            )
             SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.ExternalServices.toString))
           } else {
+            PrsServer.logSuccessMessage(
+              PrsResource.ExternalServices.toString,
+              SifRequestAction.Query.toString,
+              resourceId,
+              SifRequestParameterCollection(parameters),
+              None
+            )
             new ExternalServiceResult(
               SifRequestAction.Query,
               SifHttpStatusCode.Ok,
@@ -262,6 +291,13 @@ object ExternalService extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
+          PrsServer.logSuccessMessage(
+            PrsResource.ExternalServices.toString,
+            SifRequestAction.Update.toString,
+            Some(id.get.toString),
+            SifRequestParameterCollection(parameters),
+            Some(externalService.toXml.toXmlString)
+          )
           val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
           var esResult: ExternalServiceResult = null
           if(responseFormat.equals(SrxResponseFormat.Object)) {

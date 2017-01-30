@@ -7,7 +7,7 @@ import org.psesd.srx.shared.core._
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, ArgumentNullOrEmptyOrWhitespaceException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
-import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestAction, SifRequestParameter}
+import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestAction, SifRequestParameter, SifRequestParameterCollection}
 import org.psesd.srx.shared.data.exceptions.DatasourceDuplicateViolationException
 import org.psesd.srx.shared.data.{Datasource, DatasourceResult}
 
@@ -142,6 +142,13 @@ object DataSet extends PrsEntityService {
       datasource.close()
 
       if (result.success) {
+        PrsServer.logSuccessMessage(
+          PrsResource.DataSets.toString,
+          SifRequestAction.Create.toString,
+          result.id,
+          SifRequestParameterCollection(parameters),
+          Some(dataSet.toXml.toXmlString)
+        )
         val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
         if(responseFormat.equals(SrxResponseFormat.Object)) {
           val queryResult = executeQuery(Some(result.id.get.toInt))
@@ -191,6 +198,13 @@ object DataSet extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
+          PrsServer.logSuccessMessage(
+            PrsResource.DataSets.toString,
+            SifRequestAction.Delete.toString,
+            Some(id.get.toString),
+            SifRequestParameterCollection(parameters),
+            None
+          )
           val dsResult = new DataSetResult(
             SifRequestAction.Delete,
             SifRequestAction.getSuccessStatusCode(SifRequestAction.Delete),
@@ -217,9 +231,24 @@ object DataSet extends PrsEntityService {
       try {
         val result = executeQuery(id)
         if (result.success) {
+          val resourceId = if (id.isEmpty) Some("all") else Some(id.get.toString)
           if (id.isDefined && result.rows.isEmpty) {
+            PrsServer.logNotFoundMessage(
+              PrsResource.DataSets.toString,
+              SifRequestAction.Query.toString,
+              resourceId,
+              SifRequestParameterCollection(parameters),
+              None
+            )
             SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.DataSets.toString))
           } else {
+            PrsServer.logSuccessMessage(
+              PrsResource.DataSets.toString,
+              SifRequestAction.Query.toString,
+              resourceId,
+              SifRequestParameterCollection(parameters),
+              None
+            )
             new DataSetResult(
               SifRequestAction.Query,
               SifHttpStatusCode.Ok,
@@ -319,6 +348,13 @@ object DataSet extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
+          PrsServer.logSuccessMessage(
+            PrsResource.DataSets.toString,
+            SifRequestAction.Update.toString,
+            Some(id.get.toString),
+            SifRequestParameterCollection(parameters),
+            Some(dataSet.toXml.toXmlString)
+          )
           val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
           var dsResult: DataSetResult = null
           if(responseFormat.equals(SrxResponseFormat.Object)) {

@@ -6,7 +6,7 @@ import org.psesd.srx.shared.core._
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
-import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestAction, SifRequestParameter}
+import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestAction, SifRequestParameter, SifRequestParameterCollection}
 import org.psesd.srx.shared.data.exceptions.DatasourceDuplicateViolationException
 import org.psesd.srx.shared.data.{Datasource, DatasourceResult}
 
@@ -152,6 +152,13 @@ object Student extends PrsEntityService {
       datasource.close()
 
       if (result.success) {
+        PrsServer.logSuccessMessage(
+          PrsResource.DistrictServiceStudents.toString,
+          SifRequestAction.Create.toString,
+          result.id,
+          SifRequestParameterCollection(parameters),
+          Some(student.toXml.toXmlString)
+        )
         val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
         if(responseFormat.equals(SrxResponseFormat.Object)) {
           val queryResult = executeQuery(Some(result.id.get.toInt), None, None)
@@ -200,6 +207,13 @@ object Student extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
+          PrsServer.logSuccessMessage(
+            PrsResource.DistrictServiceStudents.toString,
+            SifRequestAction.Delete.toString,
+            Some(id.get.toString),
+            SifRequestParameterCollection(parameters),
+            None
+          )
           val sResult = new StudentResult(
             SifRequestAction.Delete,
             SifRequestAction.getSuccessStatusCode(SifRequestAction.Delete),
@@ -231,9 +245,33 @@ object Student extends PrsEntityService {
         try {
           val result = executeQuery(id, districtIdParam, districtServiceIdParam)
           if (result.success) {
+            var resource = ""
+            var resourceId = Some("")
+            if (id.isDefined) {
+              resource = PrsResource.DistrictServiceStudents.toString
+              resourceId = Some(id.get.toString)
+            } else {
+              resource = PrsResource.DistrictStudents.toString
+              resourceId = Some("all")
+            }
+
             if (id.isDefined && result.rows.isEmpty) {
+              PrsServer.logNotFoundMessage(
+                resource,
+                SifRequestAction.Query.toString,
+                resourceId,
+                SifRequestParameterCollection(parameters),
+                None
+              )
               SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.Students.toString))
             } else {
+              PrsServer.logSuccessMessage(
+                resource,
+                SifRequestAction.Query.toString,
+                resourceId,
+                SifRequestParameterCollection(parameters),
+                None
+              )
               new StudentResult(
                 SifRequestAction.Query,
                 SifHttpStatusCode.Ok,
@@ -336,6 +374,13 @@ object Student extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
+          PrsServer.logSuccessMessage(
+            PrsResource.DistrictServiceStudents.toString,
+            SifRequestAction.Update.toString,
+            Some(id.get.toString),
+            SifRequestParameterCollection(parameters),
+            Some(student.toXml.toXmlString)
+          )
           val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
           var sResult: StudentResult = null
           if(responseFormat.equals(SrxResponseFormat.Object)) {
