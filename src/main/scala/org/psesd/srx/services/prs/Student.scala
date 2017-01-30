@@ -152,7 +152,7 @@ object Student extends PrsEntityService {
       datasource.close()
 
       if (result.success) {
-        PrsServer.logPrsSuccessMessage(
+        PrsServer.logSuccessMessage(
           PrsResource.DistrictServiceStudents.toString,
           SifRequestAction.Create.toString,
           result.id,
@@ -207,7 +207,7 @@ object Student extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          PrsServer.logPrsSuccessMessage(
+          PrsServer.logSuccessMessage(
             PrsResource.DistrictServiceStudents.toString,
             SifRequestAction.Delete.toString,
             Some(id.get.toString),
@@ -256,7 +256,7 @@ object Student extends PrsEntityService {
             }
 
             if (id.isDefined && result.rows.isEmpty) {
-              PrsServer.logPrsNotFoundMessage(
+              PrsServer.logNotFoundMessage(
                 resource,
                 SifRequestAction.Query.toString,
                 resourceId,
@@ -265,7 +265,7 @@ object Student extends PrsEntityService {
               )
               SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.Students.toString))
             } else {
-              PrsServer.logPrsSuccessMessage(
+              PrsServer.logSuccessMessage(
                 resource,
                 SifRequestAction.Query.toString,
                 resourceId,
@@ -374,7 +374,7 @@ object Student extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          PrsServer.logPrsSuccessMessage(
+          PrsServer.logSuccessMessage(
             PrsResource.DistrictServiceStudents.toString,
             SifRequestAction.Update.toString,
             Some(id.get.toString),

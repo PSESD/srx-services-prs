@@ -349,42 +349,4 @@ object PrsServer extends SrxServer {
     Some(params.toList)
   }
 
-  def logPrsSuccessMessage(resource: String, method: String, resourceId: Option[String], parameters: SifRequestParameterCollection, requestBody: Option[String]) : SifResponse = {
-    val zoneId = if (parameters("zoneId").isDefined) Some(SifZone(parameters("zoneId").get)) else None
-    val description = "%s successful for '%s' '%s' in zone '%s'.".format(method, resource, resourceId.getOrElse(""), zoneId.getOrElse(""))
-    logPrsMessage(resource, method, zoneId, resourceId, parameters, requestBody, SrxMessageStatus.Success.toString, description)
-  }
-
-  def logPrsNotFoundMessage(resource: String, method: String, resourceId: Option[String], parameters: SifRequestParameterCollection, requestBody: Option[String]) : SifResponse = {
-    val zoneId = if (parameters("zoneId").isDefined) Some(SifZone(parameters("zoneId").get)) else None
-    val description = "%s for '%s' '%s' in zone '%s' not found.".format(method, resource, resourceId.getOrElse(""), zoneId.getOrElse(""))
-    logPrsMessage(resource, method, zoneId, resourceId, parameters, requestBody, SrxMessageStatus.NotFound.toString, description)
-  }
-
-  private def logPrsMessage(resource: String, method: String, zoneId: Option[SifZone], resourceId: Option[String], parameters: SifRequestParameterCollection, requestBody: Option[String], statusCode: String, description: String) : SifResponse ={
-
-    val message = SrxMessage(
-      srxService,
-      SifMessageId(),
-      SifTimestamp(),
-      Some(resource),
-      Some(method),
-      Some(statusCode),
-      parameters(SifHeader.GeneratorId.toString),
-      parameters(SifHeader.RequestId.toString),
-      zoneId, {
-        if (parameters("contextId").isDefined) Some(SifContext(parameters("contextId").get)) else None
-      },
-      Some(resourceId.getOrElse("")),
-      description,
-      parameters("uri"),
-      parameters(SifHttpHeader.UserAgent.toString),
-      parameters(SifHttpHeader.ForwardedFor.toString),
-      Some(parameters.getHeaders()),
-      requestBody
-    )
-
-    SrxMessageService.createMessage(parameters(SifHeader.GeneratorId.toString).getOrElse(""), message)
-  }
-
 }

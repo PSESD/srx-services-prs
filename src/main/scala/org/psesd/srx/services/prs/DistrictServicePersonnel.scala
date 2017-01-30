@@ -123,7 +123,7 @@ object DistrictServicePersonnel extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          PrsServer.logPrsSuccessMessage(
+          PrsServer.logSuccessMessage(
             PrsResource.DistrictServicePersonnel.toString,
             SifRequestAction.Create.toString,
             result.id,
@@ -173,7 +173,7 @@ object DistrictServicePersonnel extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          PrsServer.logPrsSuccessMessage(
+          PrsServer.logSuccessMessage(
             PrsResource.DistrictServicePersonnel.toString,
             SifRequestAction.Delete.toString,
             Some(id.get.toString),
@@ -212,7 +212,7 @@ object DistrictServicePersonnel extends PrsEntityService {
           if (result.success) {
             val resourceId = if (id.isEmpty) Some("all") else Some(id.get.toString)
             if (id.isDefined && result.rows.isEmpty) {
-              PrsServer.logPrsNotFoundMessage(
+              PrsServer.logNotFoundMessage(
                 PrsResource.DistrictServicePersonnel.toString,
                 SifRequestAction.Query.toString,
                 resourceId,
@@ -221,7 +221,7 @@ object DistrictServicePersonnel extends PrsEntityService {
               )
               SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.Personnel.toString))
             } else {
-              PrsServer.logPrsSuccessMessage(
+              PrsServer.logSuccessMessage(
                 PrsResource.DistrictServicePersonnel.toString,
                 SifRequestAction.Query.toString,
                 resourceId,
@@ -298,7 +298,7 @@ object DistrictServicePersonnel extends PrsEntityService {
           datasource.close()
 
           if (result.success) {
-            PrsServer.logPrsSuccessMessage(
+            PrsServer.logSuccessMessage(
               PrsResource.DistrictServicePersonnel.toString,
               SifRequestAction.Update.toString,
               Some(id.get.toString),

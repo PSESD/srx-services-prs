@@ -135,7 +135,7 @@ object DataObject extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          PrsServer.logPrsSuccessMessage(
+          PrsServer.logSuccessMessage(
             PrsResource.DataObjects.toString,
             SifRequestAction.Create.toString,
             result.id,
@@ -187,7 +187,7 @@ object DataObject extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          PrsServer.logPrsSuccessMessage(
+          PrsServer.logSuccessMessage(
             PrsResource.DataObjects.toString,
             SifRequestAction.Delete.toString,
             Some(id.get.toString),
@@ -226,7 +226,7 @@ object DataObject extends PrsEntityService {
           if (result.success) {
             val resourceId = if (id.isEmpty) Some("all") else Some(id.get.toString)
             if (id.isDefined && result.rows.isEmpty) {
-              PrsServer.logPrsNotFoundMessage(
+              PrsServer.logNotFoundMessage(
                 PrsResource.DataObjects.toString,
                 SifRequestAction.Query.toString,
                 resourceId,
@@ -235,7 +235,7 @@ object DataObject extends PrsEntityService {
               )
               SrxResourceErrorResult(SifHttpStatusCode.NotFound, new SrxResourceNotFoundException(PrsResource.DataObjects.toString))
             } else {
-              PrsServer.logPrsSuccessMessage(
+              PrsServer.logSuccessMessage(
                 PrsResource.DataObjects.toString,
                 SifRequestAction.Query.toString,
                 resourceId,
@@ -314,7 +314,7 @@ object DataObject extends PrsEntityService {
           datasource.close()
 
           if (result.success) {
-            PrsServer.logPrsSuccessMessage(
+            PrsServer.logSuccessMessage(
               PrsResource.DataObjects.toString,
               SifRequestAction.Update.toString,
               Some(id.get.toString),
