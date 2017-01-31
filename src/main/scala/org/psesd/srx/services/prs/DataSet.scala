@@ -91,11 +91,19 @@ object DataSet extends PrsEntityService {
       throw new ArgumentNullException("dataSetXml parameter")
     }
     val rootElementName = dataSetXml.label
-    if (rootElementName != "dataSet" && rootElementName != "root") {
+    if (rootElementName != "dataSet" && rootElementName != "dataSets" && rootElementName != "root") {
       throw new ArgumentInvalidException("root element '%s'".format(rootElementName))
     }
     val id = (dataSetXml \ "id").textOption.getOrElse("0").toInt
-    val name = (dataSetXml \ "name").textRequired("name")
+
+    val name = {
+      if (parameters.isDefined && getRequestParameter(parameters.get, "idOnly").isDefined) {
+        (dataSetXml \ "name").textOption.getOrElse("None")
+      } else {
+        (dataSetXml \ "name").textRequired("name")
+      }
+    }
+
     val description = (dataSetXml \ "description").textOption
     val dataObjects = ArrayBuffer[DataObject]()
     for(d <- dataSetXml \ "dataObjects" \ "dataObject") {

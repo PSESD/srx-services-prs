@@ -181,8 +181,14 @@ object DistrictService extends PrsEntityService {
     val expirationDate = (districtServiceXml \ "expirationDate").textRequired("districtService.expirationDate")
     val requiresPersonnel = (districtServiceXml \ "requiresPersonnel").textOption
     val dataSets = ArrayBuffer[DataSet]()
-    for(ds <- districtServiceXml \ "dataSets" \ "dataSet") {
-      dataSets += DataSet(ds, None)
+    if ((districtServiceXml \ "dataSets" \ "dataSet").length > 0) {
+      for (ds <- districtServiceXml \ "dataSets" \ "dataSet") {
+        dataSets += DataSet(ds, None)
+      }
+    } else {
+      for (ds <- districtServiceXml \ "dataSets") {
+        dataSets += DataSet(ds, Some(List[SifRequestParameter](SifRequestParameter("idOnly", "true"))))
+      }
     }
     new DistrictService(
       id,
