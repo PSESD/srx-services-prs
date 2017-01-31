@@ -24,15 +24,15 @@ class DistrictServiceTests extends FunSuite with BeforeAndAfterAll {
   val dataSet: DataSet = DataSet(0, "district service sre", Some("firstName"), None)
   var dataSetResult: DataSetResult = _
 
-//  override def beforeAll {
-//    districtResult = District.create(district, List[SifRequestParameter]()).asInstanceOf[DistrictResult]
-//    authorizedEntityResult = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
-//
-//    val externalService: ExternalService = ExternalService(0, authorizedEntityResult.getId, Some("district service test"), Some("test service description"))
-//    externalServiceResult = ExternalService.create(externalService, List[SifRequestParameter]()).asInstanceOf[ExternalServiceResult]
-//
-//    dataSetResult = DataSet.create(dataSet, List[SifRequestParameter]()).asInstanceOf[DataSetResult]
-//  }
+  override def beforeAll {
+    districtResult = District.create(district, List[SifRequestParameter]()).asInstanceOf[DistrictResult]
+    authorizedEntityResult = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
+
+    val externalService: ExternalService = ExternalService(0, authorizedEntityResult.getId, Some("district service test"), Some("test service description"))
+    externalServiceResult = ExternalService.create(externalService, List[SifRequestParameter]()).asInstanceOf[ExternalServiceResult]
+
+    dataSetResult = DataSet.create(dataSet, List[SifRequestParameter]()).asInstanceOf[DataSetResult]
+  }
 
   test("constructor") {
     val id = 123
@@ -102,10 +102,10 @@ class DistrictServiceTests extends FunSuite with BeforeAndAfterAll {
 
   test("node") {
     val id = 123
-    val districtId = 1//districtResult.getId
-    val externalServiceId = 1//externalServiceResult.getId
+    val districtId = districtResult.getId
+    val externalServiceId = externalServiceResult.getId
     val externalServiceName = Some("test service")
-    val authorizedEntityId = Some(1)//authorizedEntityResult.getId)
+    val authorizedEntityId = Some(authorizedEntityResult.getId)
     val authorizedEntityName = Some("test entity")
     val initiationDate = "2016-01-01"
     val expirationDate = "2017-01-01"
@@ -389,10 +389,10 @@ class DistrictServiceTests extends FunSuite with BeforeAndAfterAll {
     assert(result.statusCode == SifHttpStatusCode.Ok)
   }
 
-//  override def afterAll {
-//    District.delete(List[SifRequestParameter](SifRequestParameter("id", districtResult.getId.toString)))
-//    AuthorizedEntity.delete(List[SifRequestParameter](SifRequestParameter("id", authorizedEntityResult.getId.toString)))
-//    ExternalService.delete(List[SifRequestParameter](SifRequestParameter("id", externalServiceResult.getId.toString)))
-//    DataSet.delete(List[SifRequestParameter](SifRequestParameter("id", dataSetResult.getId.toString)))
-//  }
+  override def afterAll {
+    District.delete(List[SifRequestParameter](SifRequestParameter("id", districtResult.getId.toString)))
+    AuthorizedEntity.delete(List[SifRequestParameter](SifRequestParameter("id", authorizedEntityResult.getId.toString)))
+    ExternalService.delete(List[SifRequestParameter](SifRequestParameter("id", externalServiceResult.getId.toString)))
+    DataSet.delete(List[SifRequestParameter](SifRequestParameter("id", dataSetResult.getId.toString)))
+  }
 }
