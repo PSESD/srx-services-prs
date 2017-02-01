@@ -230,29 +230,6 @@ class DistrictServiceTests extends FunSuite with BeforeAndAfterAll {
     assert(result.toXml.get.toXmlString.contains("id=\"%s\"".format(createdId.toString)))
   }
 
-  test("create dataSet") {
-    val districtService = DistrictService(
-      <districtService>
-        <externalServiceId>{externalServiceResult.getId}</externalServiceId>
-        <initiationDate>2016-01-01</initiationDate>
-        <expirationDate>2017-01-01</expirationDate>
-        <requiresPersonnel>true</requiresPersonnel>
-        <dataSets>
-          <dataSet>
-            <id>{dataSetResult.getId}</id>
-            <name>sre</name>
-          </dataSet>
-        </dataSets>
-      </districtService>,
-      Some(List[SifRequestParameter](SifRequestParameter("districtId", {districtResult.getId.toString})))
-    )
-    val result = DistrictService.create(districtService, List[SifRequestParameter]()).asInstanceOf[DistrictServiceResult]
-    createdId = result.getId
-    assert(result.success)
-    assert(result.exceptions.isEmpty)
-    assert(result.toXml.get.toXmlString.contains("id=\"%s\"".format(createdId.toString)))
-  }
-
   test("create duplicate") {
     val districtService = DistrictService(
       <districtService>
