@@ -197,10 +197,8 @@ object Student extends PrsEntityService {
 
         val result = datasource.execute(
           "begin;" +
-            "delete from srx_services_prs.consent where id = (select consent_id from srx_services_prs.student where id = ?);" +
             "delete from srx_services_prs.student where id = ?;" +
             "commit;",
-          id.get,
           id.get
         )
 

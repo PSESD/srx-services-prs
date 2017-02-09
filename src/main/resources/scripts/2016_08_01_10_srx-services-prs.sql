@@ -407,7 +407,7 @@ CREATE TABLE IF NOT EXISTS srx_services_prs.student
 (
   id integer NOT NULL DEFAULT nextval('srx_services_prs.student_id_seq'::regclass),
   district_service_id integer NOT NULL REFERENCES srx_services_prs.district_service ON DELETE CASCADE,
-  consent_id integer NOT NULL REFERENCES srx_services_prs.consent ON DELETE CASCADE,
+  consent_id integer NOT NULL REFERENCES srx_services_prs.consent,
   district_student_id text NOT NULL,
   CONSTRAINT student_pkey PRIMARY KEY (id),
   CONSTRAINT student_unique UNIQUE (district_service_id, district_student_id)
