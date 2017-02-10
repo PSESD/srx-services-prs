@@ -8,6 +8,7 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite}
 class StudentTests extends FunSuite with BeforeAndAfterAll {
 
   var createdId: Int = 0
+  var consentId: Int = _
 
   val district = District(0, "district", None, None, None)
   var districtResult: DistrictResult = _
@@ -46,6 +47,7 @@ class StudentTests extends FunSuite with BeforeAndAfterAll {
       Some(List(SifRequestParameter("districtServiceId", districtServiceResult.getId.toString)))
     )
     consentResult = Consent.create(consent, List[SifRequestParameter]()).asInstanceOf[ConsentResult]
+    consentId = consentResult.getId
   }
 
   test("constructor") {
