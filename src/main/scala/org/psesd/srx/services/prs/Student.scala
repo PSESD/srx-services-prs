@@ -6,7 +6,7 @@ import org.psesd.srx.shared.core._
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
-import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestAction, SifRequestParameter, SifRequestParameterCollection}
+import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestAction, SifRequestParameter, SifRequestParameterCollection, SifZone}
 import org.psesd.srx.shared.data.exceptions.DatasourceDuplicateViolationException
 import org.psesd.srx.shared.data.{Datasource, DatasourceResult}
 
@@ -152,31 +152,47 @@ object Student extends PrsEntityService {
       datasource.close()
 
       if (result.success) {
+        val requestParams = SifRequestParameterCollection(parameters)
+
         PrsServer.logSuccessMessage(
           PrsResource.DistrictServiceStudents.toString,
           SifRequestAction.Create.toString,
           result.id,
-          SifRequestParameterCollection(parameters),
+          requestParams,
           Some(student.toXml.toXmlString)
         )
+
+         val refreshResult = XsreRefreshRequestService.sendRequest(SifZone(requestParams("zoneId").get), student.districtStudentId, requestParams("generatorId").get)
+         if (refreshResult.statusCode == 500) {
+            PrsServer.logMessage(
+              "XsreRefresh",
+              SifRequestAction.Create.toString,
+              Some(SifZone(requestParams("zoneId").get)),
+              Some(student.districtStudentId), requestParams,
+              None,
+              "500",
+              "XsreRefresh trigger failed")
+          }
+
         val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
         if(responseFormat.equals(SrxResponseFormat.Object)) {
-          val queryResult = executeQuery(Some(result.id.get.toInt), None, None)
-          new StudentResult(
-            SifRequestAction.Create,
-            SifRequestAction.getSuccessStatusCode(SifRequestAction.Create),
-            queryResult,
-            responseFormat
-          )
-        } else {
-          new StudentResult(
-            SifRequestAction.Create,
-            SifRequestAction.getSuccessStatusCode(SifRequestAction.Create),
-            result,
-            responseFormat
-          )
-        }
-      } else {
+            val queryResult = executeQuery(Some(result.id.get.toInt), None, None)
+            new StudentResult(
+              SifRequestAction.Create,
+              SifRequestAction.getSuccessStatusCode(SifRequestAction.Create),
+              queryResult,
+              responseFormat
+            )
+          } else {
+            new StudentResult(
+              SifRequestAction.Create,
+              SifRequestAction.getSuccessStatusCode(SifRequestAction.Create),
+              result,
+              responseFormat
+            )
+          }
+
+      } else {  //result.fail
         throw result.exceptions.head
       }
     } catch {

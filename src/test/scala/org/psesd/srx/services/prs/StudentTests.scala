@@ -117,7 +117,7 @@ class StudentTests extends FunSuite with BeforeAndAfterAll {
       </student>,
       None
     )
-    val result = Student.create(student, List[SifRequestParameter]()).asInstanceOf[StudentResult]
+    val result = Student.create(student, List[SifRequestParameter](new SifRequestParameter("zoneId", "test"), new SifRequestParameter("generatorId", "test"))).asInstanceOf[StudentResult]
     createdId = result.getId
     assert(result.success)
     assert(result.exceptions.isEmpty)
@@ -192,7 +192,7 @@ class StudentTests extends FunSuite with BeforeAndAfterAll {
       </student>,
       None
     )
-    val createdStudentResult = Student.create(student, List[SifRequestParameter]()).asInstanceOf[StudentResult]
+    val createdStudentResult = Student.create(student, List[SifRequestParameter](new SifRequestParameter("zoneId", "test"), new SifRequestParameter("generatorId", "test"))).asInstanceOf[StudentResult]
 
     val updatedDistrictStudentId = "6789 UPDATED"
     val updatedStudent = Student(
