@@ -14,6 +14,7 @@ lazy val jodaConvertVersion = "1.8.1"
 lazy val jodaTimeVersion = "2.9.4"
 lazy val json4sVersion = "3.4.0"
 lazy val scalaTestVersion = "2.2.6"
+lazy val casbahVersion = "3.1.1"
 
 // Date/time
 libraryDependencies ++= Seq(
@@ -48,6 +49,11 @@ libraryDependencies ++= Seq(
 libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-vfs2" % apacheCommonsVersion,
   "org.apache.poi" % "poi" % apachePoiVersion
+)
+
+//Casbah MongoDB Driver
+libraryDependencies ++= Seq(
+  "org.mongodb" %% "casbah" % casbahVersion
 )
 
 // Build info

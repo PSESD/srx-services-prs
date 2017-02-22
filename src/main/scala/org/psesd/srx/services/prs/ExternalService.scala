@@ -1,5 +1,7 @@
 package org.psesd.srx.services.prs
 
+import com.mongodb.casbah.MongoConnection
+import com.mongodb.casbah.commons.MongoDBObject
 import org.json4s.JValue
 import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
 import org.psesd.srx.shared.core._
@@ -127,6 +129,8 @@ object ExternalService extends PrsEntityService {
       datasource.close()
 
       if (result.success) {
+        mongoDBInsert(externalService, result)
+
         PrsServer.logSuccessMessage(
           PrsResource.ExternalServices.toString,
           SifRequestAction.Create.toString,
@@ -344,4 +348,21 @@ object ExternalService extends PrsEntityService {
     externalServiceResult.toList
   }
 
+  private def mongoDBInsert(externalService: ExternalService, datasourceResult: DatasourceResult): Unit = {
+    val mongoConn = MongoConnection()
+    val mongoDB = mongoConn("cbo")
+    val organizationsTable = mongoDB("organizations")
+
+    val authorizedEntityResult = AuthorizedEntity.query(List[SifRequestParameter](SifRequestParameter("id", externalService.authorizedEntityId.toString)))
+    val authorizedEntityXml = authorizedEntityResult.toXml.get
+
+    val organization = MongoDBObject("name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text,
+                                      "website" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
+                                      "url" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
+                                      "authorizedEntityId" -> (authorizedEntityXml \ "authorizedEntity" \ "id").text.toInt,
+                                      "externalServiceId" -> datasourceResult.id.get.toInt)
+    organizationsTable.save(organization)
+
+    mongoConn.close()
+  }
 }
