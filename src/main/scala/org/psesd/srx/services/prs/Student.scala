@@ -162,17 +162,16 @@ object Student extends PrsEntityService {
           Some(student.toXml.toXmlString)
         )
 
-         val refreshResult = XsreRefreshRequestService.sendRequest(SifZone(requestParams("zoneId").get), student.districtStudentId, requestParams("generatorId").get)
-         if (refreshResult.statusCode == 500) {
-            PrsServer.logMessage(
-              "XsreRefresh",
-              SifRequestAction.Create.toString,
-              Some(SifZone(requestParams("zoneId").get)),
-              Some(student.districtStudentId), requestParams,
-              None,
-              "500",
-              "XsreRefresh trigger failed")
-          }
+        val refreshResult = XsreRefreshRequestService.sendRequest(SifZone(requestParams("zoneId").get), student.districtStudentId, requestParams("generatorId").get)
+        PrsServer.logMessage(
+          "XsreRefresh",
+          SifRequestAction.Create.toString,
+          Some(SifZone(requestParams("zoneId").get)),
+          Some(student.districtStudentId),
+          requestParams,
+          None,
+          refreshResult.statusCode.toString,
+          "Xsre refresh request submitted for student " + student.districtStudentId)
 
         val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
         if(responseFormat.equals(SrxResponseFormat.Object)) {
