@@ -149,7 +149,6 @@ class AuthorizedEntityTests extends FunSuite {
 
   test("query all") {
     val result = AuthorizedEntity.query(null)
-    val xml = result.toXml
     assert(result.success)
     assert(result.statusCode == SifHttpStatusCode.Ok)
     assert(result.toXml.nonEmpty)

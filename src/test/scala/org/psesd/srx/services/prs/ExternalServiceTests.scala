@@ -1,5 +1,7 @@
 package org.psesd.srx.services.prs
 
+import com.mongodb.casbah.MongoConnection
+import com.mongodb.casbah.commons.MongoDBObject
 import org.psesd.srx.shared.core.SrxResourceErrorResult
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestParameter}
@@ -135,5 +137,12 @@ class ExternalServiceTests extends FunSuite with BeforeAndAfterAll {
 
   override def afterAll: Unit = {
     AuthorizedEntity.delete(List[SifRequestParameter](SifRequestParameter("id", authorizedEntityResult.getId.toString)))
+
+    val mongoConn = MongoConnection()
+    val mongoDB = mongoConn("cbo")
+    val organizationsTable = mongoDB("organizations")
+    val query = MongoDBObject("name" -> "external service test")
+    organizationsTable.findAndRemove(query)
+    mongoConn.close()
   }
 }
