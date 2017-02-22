@@ -1,11 +1,8 @@
 package org.psesd.srx.services.prs
 
-import com.mongodb.async.client.{Observer, Subscription}
 import com.mongodb.casbah.MongoConnection
 import com.mongodb.casbah.commons.MongoDBObject
 import org.json4s.JValue
-import org.mongodb.scala.bson.{Document}
-import org.mongodb.scala.{Completed, MongoClient, MongoCollection, MongoDatabase, Observable}
 import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
 import org.psesd.srx.shared.core._
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
@@ -14,10 +11,8 @@ import org.psesd.srx.shared.core.sif.SifRequestAction._
 import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestAction, SifRequestParameter, SifRequestParameterCollection}
 import org.psesd.srx.shared.data.exceptions.DatasourceDuplicateViolationException
 import org.psesd.srx.shared.data.{Datasource, DatasourceResult}
-import shapeless.ops.nat.GT.>
 
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.{Await, Future}
 import scala.xml.Node
 
 /** Represents External Service.
