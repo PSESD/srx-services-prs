@@ -14,7 +14,7 @@ object XsreRefreshRequestService {
 
   def sendRequest(zone: SifZone, studentId: String, generatorId: String) : SifResponse = {
 
-      val sifRequest = new SifRequest(Environment.srxProvider, SrxResourceType.XsresRefresh.toString, zone, SifContext()) {
+      val sifRequest = new SifRequest(Environment.srxProvider, SrxResourceType.XsresRefresh.toString, zone, SifContext("DEFAULT")) {
         generatorId = generatorId
         queueId = Some(UUID.randomUUID().toString)
         requestId = Some(UUID.randomUUID().toString)

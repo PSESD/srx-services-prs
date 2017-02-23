@@ -162,7 +162,9 @@ object Student extends PrsEntityService {
           Some(student.toXml.toXmlString)
         )
 
-        val refreshResult = XsreRefreshRequestService.sendRequest(SifZone(requestParams("zoneId").get), student.districtStudentId, requestParams("generatorId").get)
+        val zone = determineBestZoneInfo(requestParams)
+
+        val refreshResult = XsreRefreshRequestService.sendRequest(SifZone(zone), student.districtStudentId, requestParams("generatorId").get)
         PrsServer.logMessage(
           "XsreRefresh",
           SifRequestAction.Create.toString,
@@ -200,6 +202,16 @@ object Student extends PrsEntityService {
       case e: Exception =>
         SrxResourceErrorResult(SifHttpStatusCode.InternalServerError, e)
     }
+  }
+
+  private def determineBestZoneInfo(requestParams: SifRequestParameterCollection) : String = {
+    requestParams("zoneId").getOrElse("") match {
+      case "seattle" | "renton" | "highline" => requestParams("zoneId").get
+      case _ =>
+        val districtNode : Node = District.query(List[SifRequestParameter](SifRequestParameter("id", requestParams("districtId").getOrElse("")))).toXml.get
+        (districtNode \ "district" \ "zoneId").text
+    }
+
   }
 
   def delete(parameters: List[SifRequestParameter]): SrxResourceResult = {
