@@ -25,6 +25,7 @@ object PrsServer extends SrxServer {
   private final val DatasourceTimeoutKey = "DATASOURCE_TIMEOUT"
   private final val DatasourceUrlKey = "DATASOURCE_URL"
   private final val MongoDbUriKey = "MONGODB_URI"
+  private final val MongoDbName = "MONGODB_NAME"
 
   private final val AuthorizedEntityIdParam = "authorizedEntityId"
   private final val DataSetIdParam = "dataSetId"
@@ -39,6 +40,7 @@ object PrsServer extends SrxServer {
   )
 
   lazy val mongoUri = Environment.getProperty(MongoDbUriKey)
+  lazy val mongoDbName = Environment.getProperty(MongoDbName)
 
   val sifProvider: SifProvider = new SifProvider(
     SifProviderUrl(Environment.getProperty(ServerUrlKey)),
