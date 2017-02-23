@@ -87,6 +87,9 @@ class ExternalServiceTests extends FunSuite with BeforeAndAfterAll {
   }
 
   test("update duplicate") {
+    AuthorizedEntity.delete(List[SifRequestParameter](SifRequestParameter("id", authorizedEntityResult.getId.toString)))
+    authorizedEntityResult = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
+
     val newExternalService = ExternalService(0, authorizedEntityResult.getId, Some("new test"), Some("test service description"))
     val newExternalServiceResult = ExternalService.create(newExternalService, List[SifRequestParameter]()).asInstanceOf[ExternalServiceResult]
 
@@ -138,11 +141,11 @@ class ExternalServiceTests extends FunSuite with BeforeAndAfterAll {
   override def afterAll: Unit = {
     AuthorizedEntity.delete(List[SifRequestParameter](SifRequestParameter("id", authorizedEntityResult.getId.toString)))
 
-    val mongoConn = MongoConnection(PrsServer.mongoUri)
-    val mongoDB = mongoConn.getDB(mongoConn.getDatabaseNames().head)
-    val organizationsTable = mongoDB("organizations")
-    val query = MongoDBObject("name" -> "external service test")
-    organizationsTable.findAndRemove(query)
-    mongoConn.close()
+//    val mongoConn = MongoConnection(PrsServer.mongoUri)
+//    val mongoDB = mongoConn.getDB(mongoConn.getDatabaseNames().head)
+//    val organizationsTable = mongoDB("organizations")
+//    val query = MongoDBObject("name" -> "external service test")
+//    organizationsTable.findAndRemove(query)
+//    mongoConn.close()
   }
 }

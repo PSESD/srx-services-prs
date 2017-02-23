@@ -15,6 +15,8 @@ lazy val jodaTimeVersion = "2.9.4"
 lazy val json4sVersion = "3.4.0"
 lazy val scalaTestVersion = "2.2.6"
 lazy val casbahVersion = "3.1.1"
+lazy val reactiveMongoVersion = "0.12.1"
+lazy val tepkinVersion = "0.6"
 
 // Date/time
 libraryDependencies ++= Seq(
@@ -54,6 +56,16 @@ libraryDependencies ++= Seq(
 //Casbah MongoDB Driver
 libraryDependencies ++= Seq(
   "org.mongodb" %% "casbah" % casbahVersion
+)
+
+//Reatice MongoDB Driver
+libraryDependencies ++= Seq(
+  "org.reactivemongo" %% "reactivemongo" % reactiveMongoVersion
+)
+
+// Tepkin MongoDB Driver
+libraryDependencies ++= Seq(
+  "com.github.jeroenr" %% "tepkin" % tepkinVersion
 )
 
 // Build info

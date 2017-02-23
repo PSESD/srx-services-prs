@@ -1,8 +1,10 @@
 package org.psesd.srx.services.prs
 
-import com.mongodb.ServerAddress
-import com.mongodb.casbah.{MongoClient, MongoClientURI, MongoConnection}
-import com.mongodb.casbah.commons.MongoDBObject
+//import com.mongodb.ServerAddress
+//import reactivemongo.bson.BSONDocument
+//import com.mongodb.casbah.{MongoClient, MongoClientURI, MongoConnection}
+//import com.mongodb.casbah.commons.MongoDBObject
+//import akka.actor.ActorSystem
 import org.json4s.JValue
 import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
 import org.psesd.srx.shared.core._
@@ -12,6 +14,23 @@ import org.psesd.srx.shared.core.sif.SifRequestAction._
 import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestAction, SifRequestParameter, SifRequestParameterCollection}
 import org.psesd.srx.shared.data.exceptions.DatasourceDuplicateViolationException
 import org.psesd.srx.shared.data.{Datasource, DatasourceResult}
+//import com.github.jeroenr.bson.BsonDsl._
+//import com.github.jeroenr.tepkin.MongoClient
+//import akka.util.Timeout
+//import com.github.jeroenr.tepkin.protocol.WriteConcern
+//import com.github.jeroenr.bson.BsonDocument
+//import com.github.jeroenr.bson.Implicits._
+//import akka.stream.scaladsl.Source
+//import akka.stream.ActorMaterializer
+
+//import scala.collection.mutable.ListBuffer
+//import scala.concurrent.ExecutionContext.Implicits.global
+//import scala.concurrent.duration._
+//import scala.concurrent.{ExecutionContext, Future}
+//import scala.runtime.Nothing$
+//
+//import reactivemongo.api.{DefaultDB, MongoConnection, MongoDriver}
+//import reactivemongo.bson.{BSONDocumentWriter, BSONDocumentReader, Macros, document}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.xml.Node
@@ -130,7 +149,8 @@ object ExternalService extends PrsEntityService {
       datasource.close()
 
       if (result.success) {
-        mongoDBInsert(externalService, result)
+//        mongoDbInsert(externalService, result)
+//        mongoDBInsert(externalService, result)
 
         PrsServer.logSuccessMessage(
           PrsResource.ExternalServices.toString,
@@ -349,23 +369,100 @@ object ExternalService extends PrsEntityService {
     externalServiceResult.toList
   }
 
-  private def mongoDBInsert(externalService: ExternalService, datasourceResult: DatasourceResult): Unit = {
-    val mongoClientURI = MongoClientURI(PrsServer.mongoUri)
-    val mongoClient = MongoClient(mongoClientURI)
-    val mongoDb = mongoClient(PrsServer.mongoDbName)
-    val organizationsTable = mongoDb("organizations")
+//  TEPKIN DRIVER
+//    private def mongoDbInsert(externalService: ExternalService, dataSourceResult: DatasourceResult): Unit = {
+//      val authorizedEntityResult = AuthorizedEntity.query(List[SifRequestParameter](SifRequestParameter("id", externalService.authorizedEntityId.toString)))
+//      val authorizedEntityXml = authorizedEntityResult.toXml.get
+//
+//      val organization = Iterable($document("name" := (authorizedEntityXml \ "authorizedEntity" \ "name").text,
+//                                   "website" := (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
+//                                   "url" := (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
+//                                   "authorizedEntityId" := (authorizedEntityXml \ "authorizedEntity" \ "id").text.toInt,
+//                                   "externalServiceId" := dataSourceResult.id.get.toInt))
+//
+//      val client = MongoClient(PrsServer.mongoUri)
+//      val db = client(PrsServer.mongoDbName)
+//      val collection = db("organizations")
+//
+//      implicit val timeout: Timeout = 5.seconds
+////      val executionContext = ActorSystem("tepkin-system").dispatcher
+////      import client.ec
+//      collection.insertFromSource(Source{List(organization)})
+//
+//      client.shutdown()
+//    }
 
-    val authorizedEntityResult = AuthorizedEntity.query(List[SifRequestParameter](SifRequestParameter("id", externalService.authorizedEntityId.toString)))
-    val authorizedEntityXml = authorizedEntityResult.toXml.get
 
-    val organization = MongoDBObject("name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text,
-                                     "website" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
-                                     "url" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
-                                     "authorizedEntityId" -> (authorizedEntityXml \ "authorizedEntity" \ "id").text.toInt,
-                                     "externalServiceId" -> datasourceResult.id.get.toInt)
 
-    organizationsTable.save(organization)
+//  REACTIVEMONGO
+//  private def mongoDBInsert(externalService: ExternalService, dataSourceResult: DatasourceResult): Unit = {
+//    import ExecutionContext.Implicits.global
+//
+//    val driver = MongoDriver()
+//    val parsedUri = MongoConnection.parseURI(PrsServer.mongoUri)
+//    val connection = parsedUri.map(driver.connection(_))
+//
+//    val futureConnection = Future.fromTry(connection)
+//    def database: Future[DefaultDB] = futureConnection.flatMap(_.database(PrsServer.mongoDbName))
+//    def organizationsCollection = database.map(_.collection("organizations"))
+//
+////    implicit def organizationWriter: BSONDocumentWriter[Person] = Macros.writer[Person]
+////    // or provide a custom one
+//
+//    val authorizedEntityResult = AuthorizedEntity.query(List[SifRequestParameter](SifRequestParameter("id", externalService.authorizedEntityId.toString)))
+//    val authorizedEntityXml = authorizedEntityResult.toXml.get
+//
+//    val organization = BSONDocument("name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text,
+//                                    "website" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
+//                                    "url" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
+//                                    "authorizedEntityId" -> (authorizedEntityXml \ "authorizedEntity" \ "id").text.toInt,
+//                                    "externalServiceId" -> dataSourceResult.id.get.toInt)
+//
+//
+//
+//    def createOrganization(organization: BSONDocument): Unit = {
+//      organizationsCollection(organization)
+//    }
+//
+//
+//
+//    case class Organization(firstName: String, lastName: String, age: Int)
+//
+//
+//
+//    driver.close()
+//  }
 
-    mongoClient.close()
-  }
+
+// CASBAH DRIVER
+//  private def mongoDBInsert(externalService: ExternalService, dataSourceResult: DatasourceResult): Unit = {
+//    val mongoClientURI = MongoClientURI(PrsServer.mongoUri)
+//    val mongoClient = MongoClient(mongoClientURI)
+//
+//    val mongoDb = mongoClient(PrsServer.mongoDbName)
+//    val organizationsTable = mongoDb("organizations")
+//
+//    val authorizedEntityResult = AuthorizedEntity.query(List[SifRequestParameter](SifRequestParameter("id", externalService.authorizedEntityId.toString)))
+//    val authorizedEntityXml = authorizedEntityResult.toXml.get
+//
+//    val organization = MongoDBObject("name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text,
+//                                     "website" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
+//                                     "url" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
+//                                     "authorizedEntityId" -> (authorizedEntityXml \ "authorizedEntity" \ "id").text.toInt,
+//                                     "externalServiceId" -> dataSourceResult.id.get.toInt)
+//
+////    try {
+//      val res = organizationsTable.save(organization)
+////    } catch {
+////      case e => Exception
+////      throw new e
+////    }
+//
+////    mongoClient.requestStart() // lock the connection in
+////    coll.insert(obj) // attempt the insert
+////    getLastError.throwOnError() // This tells the getLastError command to throw an exception in case of an error
+////    mongo.requestDone()
+//
+//    mongoClient.close()
+//  }
 }
