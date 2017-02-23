@@ -6,7 +6,6 @@ import com.mongodb.casbah.commons.MongoDBObject
 import org.json4s.JValue
 import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
 import org.psesd.srx.shared.core._
-import org.psesd.srx.shared.core.config.Environment
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
@@ -351,7 +350,8 @@ object ExternalService extends PrsEntityService {
   }
 
   private def mongoDBInsert(externalService: ExternalService, datasourceResult: DatasourceResult): Unit = {
-    val mongoClient = MongoClient(PrsServer.mongoUri)
+    val mongoClientURI = MongoClientURI(PrsServer.mongoUri)
+    val mongoClient = MongoClient(mongoClientURI)
     val mongoDb = mongoClient(PrsServer.mongoDbName)
     val organizationsTable = mongoDb("organizations")
 
