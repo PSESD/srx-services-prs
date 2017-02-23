@@ -1,5 +1,6 @@
 package org.psesd.srx.services.prs
 
+import com.mongodb.ServerAddress
 import com.mongodb.casbah.MongoConnection
 import com.mongodb.casbah.commons.MongoDBObject
 import org.json4s.JValue
@@ -349,8 +350,8 @@ object ExternalService extends PrsEntityService {
   }
 
   private def mongoDBInsert(externalService: ExternalService, datasourceResult: DatasourceResult): Unit = {
-    val mongoConn = MongoConnection()
-    val mongoDB = mongoConn("cbo")
+    val mongoConn = MongoConnection(new ServerAddress(PrsServer.mongoUri))
+    val mongoDB = mongoConn.getDB(mongoConn.getDatabaseNames().head)
     val organizationsTable = mongoDB("organizations")
 
     val authorizedEntityResult = AuthorizedEntity.query(List[SifRequestParameter](SifRequestParameter("id", externalService.authorizedEntityId.toString)))
