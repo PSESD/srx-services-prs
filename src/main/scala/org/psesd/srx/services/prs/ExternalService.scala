@@ -1,10 +1,12 @@
 package org.psesd.srx.services.prs
 
-import com.mongodb.casbah.MongoConnection
+import com.mongodb.ServerAddress
+import com.mongodb.casbah.{MongoClient, MongoClientURI, MongoConnection}
 import com.mongodb.casbah.commons.MongoDBObject
 import org.json4s.JValue
 import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
 import org.psesd.srx.shared.core._
+import org.psesd.srx.shared.core.config.Environment
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
@@ -349,20 +351,21 @@ object ExternalService extends PrsEntityService {
   }
 
   private def mongoDBInsert(externalService: ExternalService, datasourceResult: DatasourceResult): Unit = {
-    val mongoConn = MongoConnection()
-    val mongoDB = mongoConn("cbo")
-    val organizationsTable = mongoDB("organizations")
+    val mongoClient = MongoClient(PrsServer.mongoUri)
+    val mongoDb = mongoClient(PrsServer.mongoDbName)
+    val organizationsTable = mongoDb("organizations")
 
     val authorizedEntityResult = AuthorizedEntity.query(List[SifRequestParameter](SifRequestParameter("id", externalService.authorizedEntityId.toString)))
     val authorizedEntityXml = authorizedEntityResult.toXml.get
 
     val organization = MongoDBObject("name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text,
-                                      "website" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
-                                      "url" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
-                                      "authorizedEntityId" -> (authorizedEntityXml \ "authorizedEntity" \ "id").text.toInt,
-                                      "externalServiceId" -> datasourceResult.id.get.toInt)
+                                     "website" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
+                                     "url" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
+                                     "authorizedEntityId" -> (authorizedEntityXml \ "authorizedEntity" \ "id").text.toInt,
+                                     "externalServiceId" -> datasourceResult.id.get.toInt)
+
     organizationsTable.save(organization)
 
-    mongoConn.close()
+    mongoClient.close()
   }
 }
