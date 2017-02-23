@@ -212,7 +212,7 @@ class PrsServerTests extends FunSuite {
   }
 
 
-  var districtId: Int = 0
+  var districtId: Int = 11
 
   test("create district") {
     if (Environment.isLocal) {
@@ -271,7 +271,7 @@ class PrsServerTests extends FunSuite {
   }
 
 
-  var districtServiceId: Int = 0
+  var districtServiceId: Int = 11
 
   test("create district service") {
     if (Environment.isLocal) {
@@ -339,7 +339,8 @@ class PrsServerTests extends FunSuite {
         </student>,
         None
       )
-      val sifRequest = new SifRequest(TestValues.sifProvider, resource)
+      val sifRequest = new SifRequest(TestValues.sifProvider, resource, SifZone("seattle"))
+
       sifRequest.generatorId = Some(TestValues.generatorId)
       sifRequest.body = Some(student.toXml.toXmlString)
       // println("CREATE RESOURCE: %s".format(resource))
