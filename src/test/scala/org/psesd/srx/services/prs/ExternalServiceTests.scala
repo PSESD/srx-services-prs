@@ -87,9 +87,6 @@ class ExternalServiceTests extends FunSuite with BeforeAndAfterAll {
   }
 
   test("update duplicate") {
-    AuthorizedEntity.delete(List[SifRequestParameter](SifRequestParameter("id", authorizedEntityResult.getId.toString)))
-    authorizedEntityResult = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
-
     val newExternalService = ExternalService(0, authorizedEntityResult.getId, Some("new test"), Some("test service description"))
     val newExternalServiceResult = ExternalService.create(newExternalService, List[SifRequestParameter]()).asInstanceOf[ExternalServiceResult]
 
