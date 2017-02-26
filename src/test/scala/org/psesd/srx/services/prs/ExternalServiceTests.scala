@@ -87,10 +87,13 @@ class ExternalServiceTests extends FunSuite with BeforeAndAfterAll {
   }
 
   test("update duplicate") {
-    val newExternalService = ExternalService(0, authorizedEntityResult.getId, Some("new test"), Some("test service description"))
+    val newAuthorizedEntity = AuthorizedEntity(0, "ae for es test", None)
+    val newAuthorizedEntityResult = AuthorizedEntity.create(newAuthorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
+
+    val newExternalService = ExternalService(0, newAuthorizedEntityResult.getId, Some("new test"), Some("test service description"))
     val newExternalServiceResult = ExternalService.create(newExternalService, List[SifRequestParameter]()).asInstanceOf[ExternalServiceResult]
 
-    val externalService = ExternalService(0, authorizedEntityResult.getId, Some("test UPDATED"), Some("test service description"))
+    val externalService = ExternalService(0, newAuthorizedEntityResult.getId, Some("test UPDATED"), Some("test service description"))
     val result = ExternalService.update(externalService, List[SifRequestParameter]()).asInstanceOf[SrxResourceErrorResult]
 
     assert(!result.success)
