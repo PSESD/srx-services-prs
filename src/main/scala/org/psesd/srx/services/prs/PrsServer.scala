@@ -39,6 +39,7 @@ object PrsServer extends SrxServer {
     Environment.getProperty(DatasourceTimeoutKey).toLong
   )
 
+  lazy val serverUrl = Environment.getProperty(ServerUrlKey)
   lazy val mongoUri = Environment.getProperty(MongoDbUriKey)
   lazy val mongoDbName = Environment.getProperty(MongoDbName)
 

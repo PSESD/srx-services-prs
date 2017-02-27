@@ -58,16 +58,6 @@ libraryDependencies ++= Seq(
   "org.mongodb" %% "casbah" % casbahVersion
 )
 
-//Reatice MongoDB Driver
-libraryDependencies ++= Seq(
-  "org.reactivemongo" %% "reactivemongo" % reactiveMongoVersion
-)
-
-// Tepkin MongoDB Driver
-libraryDependencies ++= Seq(
-  "com.github.jeroenr" %% "tepkin" % tepkinVersion
-)
-
 // Build info
 lazy val root = (project in file(".")).
   enablePlugins(BuildInfoPlugin).

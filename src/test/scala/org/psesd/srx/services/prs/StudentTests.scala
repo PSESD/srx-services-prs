@@ -1,5 +1,7 @@
 package org.psesd.srx.services.prs
 
+import com.mongodb.casbah.commons.MongoDBObject
+import com.mongodb.casbah.{MongoClient, MongoClientURI}
 import org.psesd.srx.shared.core.SrxResourceErrorResult
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestParameter}
@@ -260,5 +262,15 @@ class StudentTests extends FunSuite with BeforeAndAfterAll {
     ExternalService.delete(List[SifRequestParameter](SifRequestParameter("id", externalServiceResult.getId.toString)))
     DistrictService.delete(List[SifRequestParameter](SifRequestParameter("id", districtServiceResult.getId.toString)))
     Consent.delete(List[SifRequestParameter](SifRequestParameter("id", consentResult.getId.toString)))
+
+    val mongoClientURI = MongoClientURI(PrsServer.mongoUri)
+    val mongoClient = MongoClient(mongoClientURI)
+    val mongoDb = mongoClient(PrsServer.mongoDbName)
+    val organizationsTable = mongoDb("organizations")
+
+    val authorizedEntityQuery = MongoDBObject("name" -> "external service")
+    organizationsTable.findAndRemove(authorizedEntityQuery)
+
+    mongoClient.close()
   }
 }

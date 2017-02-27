@@ -1,10 +1,11 @@
 package org.psesd.srx.services.prs
 
-import com.mongodb.casbah.{MongoClient, MongoClientURI}
+import com.mongodb.casbah.{MongoClient, MongoClientURI, MongoCollection}
 import com.mongodb.casbah.commons.MongoDBObject
+import org.joda.time.{DateTime, DateTimeZone}
 import org.json4s.JValue
 import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
-import org.psesd.srx.shared.core._
+import org.psesd.srx.shared.core.{sif, _}
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
@@ -129,7 +130,7 @@ object ExternalService extends PrsEntityService {
       datasource.close()
 
       if (result.success) {
-        mongoDbInsert(externalService, result)
+        mongoAction("insert", externalService.authorizedEntityId.toString, result)
 
         PrsServer.logSuccessMessage(
           PrsResource.ExternalServices.toString,
@@ -168,6 +169,11 @@ object ExternalService extends PrsEntityService {
 
   def delete(parameters: List[SifRequestParameter]): SrxResourceResult = {
     val id = getKeyIdFromRequestParameters(parameters)
+
+    val externalServiceResult = ExternalService.query(List[SifRequestParameter](SifRequestParameter("id", id.get.toString)))
+    val externalServiceXml = externalServiceResult.toXml.get
+    val authorizedEntityId = (externalServiceXml \ "externalService" \ "authorizedEntityId").text
+
     if (id.isEmpty || id.get == -1) {
       SrxResourceErrorResult(SifHttpStatusCode.BadRequest, new ArgumentInvalidException("id parameter"))
     } else {
@@ -182,6 +188,8 @@ object ExternalService extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
+          mongoAction("delete", authorizedEntityId)
+
           PrsServer.logSuccessMessage(
             PrsResource.ExternalServices.toString,
             SifRequestAction.Delete.toString,
@@ -348,25 +356,38 @@ object ExternalService extends PrsEntityService {
     externalServiceResult.toList
   }
 
-// CASBAH DRIVER
-  private def mongoDbInsert(externalService: ExternalService, dataSourceResult: DatasourceResult): Unit = {
+  private def mongoAction(action: String, authorizedEntityId: String, dataSourceResult: DatasourceResult = null): Unit = {
     val mongoClientURI = MongoClientURI(PrsServer.mongoUri)
     val mongoClient = MongoClient(mongoClientURI)
 
     val mongoDb = mongoClient(PrsServer.mongoDbName)
     val organizationsTable = mongoDb("organizations")
 
-    val authorizedEntityResult = AuthorizedEntity.query(List[SifRequestParameter](SifRequestParameter("id", externalService.authorizedEntityId.toString)))
+    val authorizedEntityResult = AuthorizedEntity.query(List[SifRequestParameter](SifRequestParameter("id", authorizedEntityId)))
     val authorizedEntityXml = authorizedEntityResult.toXml.get
 
-    val organization = MongoDBObject("name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text,
-                                     "website" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
-                                     "url" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
-                                     "authorizedEntityId" -> (authorizedEntityXml \ "authorizedEntity" \ "id").text.toInt,
-                                     "externalServiceId" -> dataSourceResult.id.get.toInt)
-
-    organizationsTable += organization
+    action match {
+      case "insert"  => mongoInsert(organizationsTable, authorizedEntityXml, dataSourceResult)
+      case "delete"  => mongoDelete(organizationsTable, authorizedEntityXml)
+    }
 
     mongoClient.close()
   }
+
+  private def mongoInsert(organizationsTable: MongoCollection, authorizedEntityXml: Node, dataSourceResult: DatasourceResult): Unit = {
+    val organization = MongoDBObject( "name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text,
+                                      "website" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
+                                      "url" -> PrsServer.serverUrl,
+                                      "authorizedEntityId" -> (authorizedEntityXml \ "authorizedEntity" \ "id").text.toInt,
+                                      "externalServiceId" -> dataSourceResult.id.get.toInt  )
+
+    organizationsTable.save(organization)
+  }
+
+  private def mongoDelete(organizationsTable: MongoCollection, authorizedEntityXml: Node): Unit = {
+    val authorizedEntityQuery = MongoDBObject("name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text)
+    organizationsTable.findAndRemove(authorizedEntityQuery)
+  }
+
+
 }
