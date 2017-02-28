@@ -10,7 +10,8 @@ class ExternalServiceTests extends FunSuite with BeforeAndAfterAll {
 
   var createdId: Int = 0
 
-  val authorizedEntity: AuthorizedEntity = AuthorizedEntity(0, "external service test", None)
+  val contact = new Contact(0, Some("jon"), Some("director"), Some("jon@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("jon.com"))
+  val authorizedEntity: AuthorizedEntity = AuthorizedEntity(0, "external service test", Some(contact))
   var authorizedEntityResult: AuthorizedEntityResult = _
 
   override def beforeAll: Unit = {
@@ -85,7 +86,9 @@ class ExternalServiceTests extends FunSuite with BeforeAndAfterAll {
   }
 
   test("update duplicate") {
-    val newAuthorizedEntity = AuthorizedEntity(0, "ae for es test", None)
+    val newContact = new Contact(0, Some("jane"), Some("director"), Some("jane@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("jane.com"))
+
+    val newAuthorizedEntity = AuthorizedEntity(0, "ae for es test", Some(newContact))
     val newAuthorizedEntityResult = AuthorizedEntity.create(newAuthorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
 
     val newExternalService = ExternalService(0, newAuthorizedEntityResult.getId, Some("new test"), Some("test service description"))
@@ -98,7 +101,6 @@ class ExternalServiceTests extends FunSuite with BeforeAndAfterAll {
     assert(result.statusCode == SifHttpStatusCode.BadRequest)
     assert(result.toXml.isEmpty)
 
-    ExternalService.delete(List[SifRequestParameter](SifRequestParameter("id", newExternalServiceResult.getId.toString)))
     AuthorizedEntity.delete(List[SifRequestParameter](SifRequestParameter("id", newAuthorizedEntityResult.getId.toString)))
   }
 
