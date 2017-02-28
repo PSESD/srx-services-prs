@@ -16,7 +16,7 @@ import scala.xml.Node
   */
 class MongoDataSource {
 
-  def action(action: String, authorizedEntityId: String, dataSourceResult: DatasourceResult = null): Unit = {
+  def action(action: String, authorizedEntityId: String, externalServiceId: String = null): Unit = {
     val server = new ServerAddress(PrsServer.mongoDbHost, PrsServer.mongoDbPort.toInt)
     val credentials = MongoCredential.createCredential(PrsServer.mongoDbName, PrsServer.mongoDbName, PrsServer.mongoDbPassword.toArray)
     val mongoClient = MongoClient(server, List(credentials))
@@ -28,7 +28,7 @@ class MongoDataSource {
 
     action match {
       case "delete"  => delete(organizationsTable, authorizedEntityXml)
-      case "insert"  => insert(organizationsTable, authorizedEntityXml, dataSourceResult)
+      case "insert"  => insert(organizationsTable, authorizedEntityXml, externalServiceId)
       case "update"  => update(organizationsTable, authorizedEntityXml)
     }
 
@@ -40,12 +40,12 @@ class MongoDataSource {
     organizationsTable.findAndRemove(authorizedEntityQuery)
   }
 
-  private def insert(organizationsTable: MongoCollection, authorizedEntityXml: Node, dataSourceResult: DatasourceResult): Unit = {
+  private def insert(organizationsTable: MongoCollection, authorizedEntityXml: Node, externalServiceId: String): Unit = {
     val organization = MongoDBObject( "name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text,
                                       "website" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
                                       "url" -> PrsServer.serverName,
                                       "authorizedEntityId" -> (authorizedEntityXml \ "authorizedEntity" \ "id").text.toInt,
-                                      "externalServiceId" -> dataSourceResult.id.get.toInt  )
+                                      "externalServiceId" -> externalServiceId.toInt  )
 
     organizationsTable.save(organization)
   }

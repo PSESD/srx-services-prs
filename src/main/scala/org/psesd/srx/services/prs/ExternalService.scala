@@ -128,7 +128,7 @@ object ExternalService extends PrsEntityService {
 
       if (result.success) {
         val mongoDataSource = new MongoDataSource
-        mongoDataSource.action("insert", externalService.authorizedEntityId.toString, result)
+        mongoDataSource.action("insert", externalService.authorizedEntityId.toString, result.id.get)
 
         PrsServer.logSuccessMessage(
           PrsResource.ExternalServices.toString,
