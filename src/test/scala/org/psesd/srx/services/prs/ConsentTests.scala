@@ -162,5 +162,4 @@ class ConsentTests extends FunSuite with BeforeAndAfterAll {
     District.delete(List[SifRequestParameter](SifRequestParameter("id", districtResult.getId.toString)))
     AuthorizedEntity.delete(List[SifRequestParameter](SifRequestParameter("id", authorizedEntityResult.getId.toString)))
   }
-
 }

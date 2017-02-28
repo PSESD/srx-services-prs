@@ -25,8 +25,12 @@ object PrsServer extends SrxServer {
   private final val DatasourceMaxConnectionsKey = "DATASOURCE_MAX_CONNECTIONS"
   private final val DatasourceTimeoutKey = "DATASOURCE_TIMEOUT"
   private final val DatasourceUrlKey = "DATASOURCE_URL"
-  private final val MongoDbUriKey = "MONGODB_URI"
+  private final val MongoDbUri = "MONGODB_URI"
+
+  private final val MongoDbHost = "MONGODB_HOST"
+  private final val MongoDbPort = "MONGODB_PORT"
   private final val MongoDbName = "MONGODB_NAME"
+  private final val MongoDbPassword = "MONGODB_PASSWORD"
 
   private final val AuthorizedEntityIdParam = "authorizedEntityId"
   private final val DataSetIdParam = "dataSetId"
@@ -40,9 +44,13 @@ object PrsServer extends SrxServer {
     Environment.getProperty(DatasourceTimeoutKey).toLong
   )
 
+  lazy val mongoDbUri = Environment.getProperty(MongoDbUri)
+
   lazy val serverName = Environment.getProperty(ServerName)
-  lazy val mongoUri = Environment.getProperty(MongoDbUriKey)
+  lazy val mongoDbHost = Environment.getProperty(MongoDbHost)
+  lazy val mongoDbPort = Environment.getProperty(MongoDbPort)
   lazy val mongoDbName = Environment.getProperty(MongoDbName)
+  lazy val mongoDbPassword = Environment.getProperty(MongoDbPassword)
 
   val sifProvider: SifProvider = new SifProvider(
     SifProviderUrl(Environment.getProperty(ServerUrlKey)),

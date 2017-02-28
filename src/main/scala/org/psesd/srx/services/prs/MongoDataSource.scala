@@ -1,6 +1,7 @@
 package org.psesd.srx.services.prs
 
-import com.mongodb.casbah.{MongoClient, MongoClientURI, MongoCollection}
+import com.mongodb.ServerAddress
+import com.mongodb.casbah.{MongoClient, MongoClientURI, MongoCollection, MongoCredential}
 import com.mongodb.casbah.commons.MongoDBObject
 import org.psesd.srx.shared.core.sif.SifRequestParameter
 import org.psesd.srx.shared.data.DatasourceResult
@@ -16,9 +17,9 @@ import scala.xml.Node
 class MongoDataSource {
 
   def action(action: String, authorizedEntityId: String, dataSourceResult: DatasourceResult = null): Unit = {
-    val mongoClientURI = MongoClientURI(PrsServer.mongoUri)
-    val mongoClient = MongoClient(mongoClientURI)
-
+    val server = new ServerAddress(PrsServer.mongoDbHost, PrsServer.mongoDbPort.toInt)
+    val credentials = MongoCredential.createCredential(PrsServer.mongoDbName, PrsServer.mongoDbName, PrsServer.mongoDbPassword.toArray)
+    val mongoClient = MongoClient(server, List(credentials))
     val mongoDb = mongoClient(PrsServer.mongoDbName)
     val organizationsTable = mongoDb("organizations")
 
@@ -26,11 +27,17 @@ class MongoDataSource {
     val authorizedEntityXml = authorizedEntityResult.toXml.get
 
     action match {
-      case "insert"  => insert(organizationsTable, authorizedEntityXml, dataSourceResult)
       case "delete"  => delete(organizationsTable, authorizedEntityXml)
+      case "insert"  => insert(organizationsTable, authorizedEntityXml, dataSourceResult)
+      case "update"  => update(organizationsTable, authorizedEntityXml)
     }
 
     mongoClient.close()
+  }
+
+  private def delete(organizationsTable: MongoCollection, authorizedEntityXml: Node): Unit = {
+    val authorizedEntityQuery = MongoDBObject("name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text)
+    organizationsTable.findAndRemove(authorizedEntityQuery)
   }
 
   private def insert(organizationsTable: MongoCollection, authorizedEntityXml: Node, dataSourceResult: DatasourceResult): Unit = {
@@ -43,8 +50,7 @@ class MongoDataSource {
     organizationsTable.save(organization)
   }
 
-  private def delete(organizationsTable: MongoCollection, authorizedEntityXml: Node): Unit = {
-    val authorizedEntityQuery = MongoDBObject("name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text)
-    organizationsTable.findAndRemove(authorizedEntityQuery)
+  private def update(organizationsTable: MongoCollection, authorizedEntityXml: Node): Unit = {
+
   }
 }
