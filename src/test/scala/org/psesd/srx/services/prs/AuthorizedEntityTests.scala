@@ -98,7 +98,7 @@ class AuthorizedEntityTests extends FunSuite {
   }
 
   test("update id parameter") {
-    val contact = new Contact(0, Some("jon"), Some("director"), Some("jon@doe.com"), Some("666-1234"), Some("123 Spring St"), Some("jon.com"))
+    val contact = new Contact(0, Some("jonny"), Some("director"), Some("jon@doe.com"), Some("666-1234"), Some("123 Spring St"), Some("jon.com"))
     val authorizedEntity = AuthorizedEntity(0, "test UPDATED 1", Some(contact))
     val result = AuthorizedEntity.update(authorizedEntity, List[SifRequestParameter](SifRequestParameter("id", createdId.toString)))
     assert(result.success)

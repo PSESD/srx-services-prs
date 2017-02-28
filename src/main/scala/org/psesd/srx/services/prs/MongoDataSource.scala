@@ -20,43 +20,29 @@ class MongoDataSource {
     val mongoDb = mongoClient(PrsServer.mongoDbName)
 
     val organizationsTable = mongoDb("organizations")
-    lazy val usersTable = mongoDb("users")
+    val usersTable = mongoDb("users")
 
     val authorizedEntityXml = getAuthorizedEntity(authorizedEntityId)
 
     action match {
-      case "delete"  => delete(organizationsTable, authorizedEntityXml, usersTable)
-      case "insert"  => insert(organizationsTable, authorizedEntityXml, externalServiceId, usersTable)
-      case "update"  => update(organizationsTable, authorizedEntityXml)
+      case "delete"  => deleteOrganization(organizationsTable, authorizedEntityXml, usersTable)
+      case "insert"  => insertOrganization(organizationsTable, authorizedEntityXml, externalServiceId, usersTable)
+      case "update"  => updateOrganization(organizationsTable, authorizedEntityXml, usersTable)
     }
 
     mongoClient.close()
   }
 
-  private def delete(organizationsTable: MongoCollection, authorizedEntityXml: Node, usersTable: MongoCollection): Unit = {
+  private def deleteAdminUser(authorizedEntityXml: Node, usersTable: MongoCollection): Unit = {
+    val adminUserQuery = MongoDBObject("email" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "email").text)
+    usersTable.findAndRemove(adminUserQuery)
+  }
+
+  private def deleteOrganization(organizationsTable: MongoCollection, authorizedEntityXml: Node, usersTable: MongoCollection): Unit = {
     val authorizedEntityQuery = MongoDBObject("name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text)
     organizationsTable.findAndRemove(authorizedEntityQuery)
 
     deleteAdminUser(authorizedEntityXml, usersTable)
-  }
-
-  private def deleteAdminUser(authorizedEntityXml: Node, usersTable: MongoCollection): Unit = {
-    val adminUserEmail = (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "email").text
-
-    val adminUserQuery = MongoDBObject("email" -> adminUserEmail)
-    usersTable.findAndRemove(adminUserQuery)
-  }
-
-  private def insert(organizationsTable: MongoCollection, authorizedEntityXml: Node, externalServiceId: String, usersTable: MongoCollection): Unit = {
-    val organization = MongoDBObject( "name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text,
-                                      "website" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
-                                      "url" -> PrsServer.serverName,
-                                      "authorizedEntityId" -> (authorizedEntityXml \ "authorizedEntity" \ "id").text.toInt,
-                                      "externalServiceId" -> externalServiceId.toInt  )
-
-    organizationsTable.save(organization)
-
-    insertAdminUser(usersTable, authorizedEntityXml)
   }
 
   private def insertAdminUser(usersTable: MongoCollection, authorizedEntityXml: Node): Unit = {
@@ -84,12 +70,49 @@ class MongoDataSource {
     usersTable.save(adminUser)
   }
 
+  private def insertOrganization(organizationsTable: MongoCollection, authorizedEntityXml: Node, externalServiceId: String, usersTable: MongoCollection): Unit = {
+    val organization = MongoDBObject( "name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text,
+                                      "website" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
+                                      "url" -> PrsServer.serverName,
+                                      "authorizedEntityId" -> (authorizedEntityXml \ "authorizedEntity" \ "id").text.toInt,
+                                      "externalServiceId" -> externalServiceId.toInt  )
+
+    organizationsTable.save(organization)
+
+    insertAdminUser(usersTable, authorizedEntityXml)
+  }
+
   private def getAuthorizedEntity(authorizedEntityId: String): Node = {
     val authorizedEntityResult = AuthorizedEntity.query(List[SifRequestParameter](SifRequestParameter("id", authorizedEntityId)))
     authorizedEntityResult.toXml.get
   }
 
-  private def update(organizationsTable: MongoCollection, authorizedEntityXml: Node): Unit = {
+  private def updateAdminUser(usersTable: MongoCollection, authorizedEntityXml: Node) = {
+    val query = MongoDBObject("email" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "email").text)
+
+    val mainContactName = (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "name").text
+    val mainContactNameArr = mainContactName.split(" ")
+
+    val firstName = mainContactNameArr(0)
+    var middleName = ""
+    var lastName = ""
+
+    if (mainContactNameArr.length == 2) {
+      lastName = mainContactNameArr(1)
+    } else if (mainContactNameArr.length >= 3) {
+      middleName = mainContactNameArr(1)
+      lastName = mainContactNameArr(mainContactNameArr.length - 1)
+    }
+
+    val updatedAdminUser = MongoDBObject("email" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "email").text,
+                                         "first_name" -> firstName,
+                                         "middle_name" -> middleName,
+                                         "last_name" -> lastName)
+
+    usersTable.update(query, updatedAdminUser)
+  }
+
+  private def updateOrganization(organizationsTable: MongoCollection, authorizedEntityXml: Node, usersTable: MongoCollection): Unit = {
     val query = MongoDBObject("authorizedEntityId" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text)
 
     val updatedOrganization = MongoDBObject("name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text,
