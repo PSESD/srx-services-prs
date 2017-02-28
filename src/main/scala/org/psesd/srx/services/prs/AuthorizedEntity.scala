@@ -379,6 +379,9 @@ object AuthorizedEntity extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
+          val mongoDataSource = new MongoDataSource
+          mongoDataSource.action("update", id.get.toString)
+
           PrsServer.logSuccessMessage(
             PrsResource.AuthorizedEntities.toString,
             SifRequestAction.Update.toString,

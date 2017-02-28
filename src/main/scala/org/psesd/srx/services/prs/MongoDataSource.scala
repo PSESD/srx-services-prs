@@ -42,15 +42,22 @@ class MongoDataSource {
 
   private def insert(organizationsTable: MongoCollection, authorizedEntityXml: Node, dataSourceResult: DatasourceResult): Unit = {
     val organization = MongoDBObject( "name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text,
-      "website" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
-      "url" -> PrsServer.serverName,
-      "authorizedEntityId" -> (authorizedEntityXml \ "authorizedEntity" \ "id").text.toInt,
-      "externalServiceId" -> dataSourceResult.id.get.toInt  )
+                                      "website" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
+                                      "url" -> PrsServer.serverName,
+                                      "authorizedEntityId" -> (authorizedEntityXml \ "authorizedEntity" \ "id").text.toInt,
+                                      "externalServiceId" -> dataSourceResult.id.get.toInt  )
 
     organizationsTable.save(organization)
   }
 
   private def update(organizationsTable: MongoCollection, authorizedEntityXml: Node): Unit = {
+    val query = MongoDBObject("authorizedEntityId" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text)
 
+    val updatedOrganization = MongoDBObject("name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text,
+                                            "website" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
+                                            "url" -> PrsServer.serverName,
+                                            "authorizedEntityId" -> (authorizedEntityXml \ "authorizedEntity" \ "id").text.toInt)
+
+    organizationsTable.update(query, updatedOrganization)
   }
 }
