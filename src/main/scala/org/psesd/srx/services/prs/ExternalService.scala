@@ -1,8 +1,5 @@
 package org.psesd.srx.services.prs
 
-import com.mongodb.casbah.{MongoClient, MongoClientURI, MongoCollection}
-import com.mongodb.casbah.commons.MongoDBObject
-import org.joda.time.{DateTime, DateTimeZone}
 import org.json4s.JValue
 import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
 import org.psesd.srx.shared.core.{sif, _}
@@ -130,7 +127,8 @@ object ExternalService extends PrsEntityService {
       datasource.close()
 
       if (result.success) {
-        mongoAction("insert", externalService.authorizedEntityId.toString, result)
+        val mongoDataSource = new MongoDataSource
+        mongoDataSource.action("insert", externalService.authorizedEntityId.toString, result)
 
         PrsServer.logSuccessMessage(
           PrsResource.ExternalServices.toString,
@@ -188,7 +186,8 @@ object ExternalService extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          mongoAction("delete", authorizedEntityId)
+          val mongoDataSource = new MongoDataSource
+          mongoDataSource.action("delete", authorizedEntityId)
 
           PrsServer.logSuccessMessage(
             PrsResource.ExternalServices.toString,
@@ -355,39 +354,4 @@ object ExternalService extends PrsEntityService {
     }
     externalServiceResult.toList
   }
-
-  private def mongoAction(action: String, authorizedEntityId: String, dataSourceResult: DatasourceResult = null): Unit = {
-    val mongoClientURI = MongoClientURI(PrsServer.mongoUri)
-    val mongoClient = MongoClient(mongoClientURI)
-
-    val mongoDb = mongoClient(PrsServer.mongoDbName)
-    val organizationsTable = mongoDb("organizations")
-
-    val authorizedEntityResult = AuthorizedEntity.query(List[SifRequestParameter](SifRequestParameter("id", authorizedEntityId)))
-    val authorizedEntityXml = authorizedEntityResult.toXml.get
-
-    action match {
-      case "insert"  => mongoInsert(organizationsTable, authorizedEntityXml, dataSourceResult)
-      case "delete"  => mongoDelete(organizationsTable, authorizedEntityXml)
-    }
-
-    mongoClient.close()
-  }
-
-  private def mongoInsert(organizationsTable: MongoCollection, authorizedEntityXml: Node, dataSourceResult: DatasourceResult): Unit = {
-    val organization = MongoDBObject( "name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text,
-                                      "website" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
-                                      "url" -> PrsServer.serverUrl,
-                                      "authorizedEntityId" -> (authorizedEntityXml \ "authorizedEntity" \ "id").text.toInt,
-                                      "externalServiceId" -> dataSourceResult.id.get.toInt  )
-
-    organizationsTable.save(organization)
-  }
-
-  private def mongoDelete(organizationsTable: MongoCollection, authorizedEntityXml: Node): Unit = {
-    val authorizedEntityQuery = MongoDBObject("name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text)
-    organizationsTable.findAndRemove(authorizedEntityQuery)
-  }
-
-
 }

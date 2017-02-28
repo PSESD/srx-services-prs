@@ -22,7 +22,7 @@ class ConsentTests extends FunSuite with BeforeAndAfterAll {
     districtResult = District.create(district, List[SifRequestParameter]()).asInstanceOf[DistrictResult]
     authorizedEntityResult = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
 
-    val externalService = ExternalService(0, authorizedEntityResult.getId, Some("external service test"), Some("test service description"))
+    val externalService = ExternalService(0, authorizedEntityResult.getId, Some("external service consent test"), Some("test service description"))
     externalServiceResult = ExternalService.create(externalService, List[SifRequestParameter]()).asInstanceOf[ExternalServiceResult]
 
     val districtService = DistrictService(
@@ -161,8 +161,6 @@ class ConsentTests extends FunSuite with BeforeAndAfterAll {
   override def afterAll: Unit = {
     District.delete(List[SifRequestParameter](SifRequestParameter("id", districtResult.getId.toString)))
     AuthorizedEntity.delete(List[SifRequestParameter](SifRequestParameter("id", authorizedEntityResult.getId.toString)))
-    ExternalService.delete(List[SifRequestParameter](SifRequestParameter("id", externalServiceResult.getId.toString)))
-    DistrictService.delete(List[SifRequestParameter](SifRequestParameter("id", districtServiceResult.getId.toString)))
   }
 
 }

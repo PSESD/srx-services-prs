@@ -19,6 +19,7 @@ import scala.concurrent.ExecutionContext
 object PrsServer extends SrxServer {
 
   private final val ServerUrlKey = "SERVER_URL"
+  private final val ServerName = "SERVER_NAME"
 
   private final val DatasourceClassNameKey = "DATASOURCE_CLASS_NAME"
   private final val DatasourceMaxConnectionsKey = "DATASOURCE_MAX_CONNECTIONS"
@@ -39,7 +40,7 @@ object PrsServer extends SrxServer {
     Environment.getProperty(DatasourceTimeoutKey).toLong
   )
 
-  lazy val serverUrl = Environment.getProperty(ServerUrlKey)
+  lazy val serverName = Environment.getProperty(ServerName)
   lazy val mongoUri = Environment.getProperty(MongoDbUriKey)
   lazy val mongoDbName = Environment.getProperty(MongoDbName)
 

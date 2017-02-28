@@ -212,6 +212,9 @@ object AuthorizedEntity extends PrsEntityService {
       SrxResourceErrorResult(SifHttpStatusCode.BadRequest, new ArgumentInvalidException("id parameter"))
     } else {
       try {
+        val mongoDataSource = new MongoDataSource
+        mongoDataSource.action("delete", id.get.toString)
+
         val datasource = new Datasource(datasourceConfig)
 
         val result = datasource.execute(
