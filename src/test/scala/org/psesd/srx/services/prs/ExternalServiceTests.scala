@@ -1,5 +1,6 @@
 package org.psesd.srx.services.prs
 
+import com.mongodb.casbah.commons.MongoDBObject
 import org.psesd.srx.shared.core.SrxResourceErrorResult
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestParameter}
@@ -13,6 +14,11 @@ class ExternalServiceTests extends FunSuite with BeforeAndAfterAll {
   val contact = new Contact(0, Some("jon"), Some("director"), Some("jon@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("jon.com"))
   val authorizedEntity: AuthorizedEntity = AuthorizedEntity(0, "external service test", Some(contact))
   var authorizedEntityResult: AuthorizedEntityResult = _
+
+  val mongoDataSource = new MongoDataSource
+  val mongoClient = mongoDataSource.connectMongoClient
+  val mongoDb = mongoClient(PrsServer.mongoDbName)
+  val organizationsTable = mongoDb("organizations")
 
   override def beforeAll: Unit = {
     authorizedEntityResult = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
@@ -66,6 +72,10 @@ class ExternalServiceTests extends FunSuite with BeforeAndAfterAll {
     assert(result.success)
     assert(result.exceptions.isEmpty)
     assert(result.toXml.get.toXmlString.contains("id=\"%s\"".format(createdId.toString)))
+
+    val organizationQuery = MongoDBObject("name" -> authorizedEntity.name)
+    val organizationResult = organizationsTable.findOne(organizationQuery)
+    assert(organizationResult != None)
   }
 
   test("create duplicate") {
@@ -137,9 +147,15 @@ class ExternalServiceTests extends FunSuite with BeforeAndAfterAll {
     val result = ExternalService.delete(List[SifRequestParameter](SifRequestParameter("id", createdId.toString)))
     assert(result.success)
     assert(result.statusCode == SifHttpStatusCode.Ok)
+
+    val organizationQuery = MongoDBObject("name" -> authorizedEntity.name)
+    val organizationResult = organizationsTable.findOne(organizationQuery)
+    assert(organizationResult == None)
   }
 
   override def afterAll: Unit = {
     AuthorizedEntity.delete(List[SifRequestParameter](SifRequestParameter("id", authorizedEntityResult.getId.toString)))
+
+    mongoClient.close()
   }
 }

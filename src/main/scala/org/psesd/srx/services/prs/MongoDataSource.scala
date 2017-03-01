@@ -2,7 +2,8 @@ package org.psesd.srx.services.prs
 
 import com.mongodb.ServerAddress
 import com.mongodb.casbah.{MongoClient, MongoCollection, MongoCredential}
-import com.mongodb.casbah.commons.MongoDBObject
+import com.mongodb.casbah.commons.{MongoDBList, MongoDBObject}
+import org.joda.time.{DateTime, DateTimeZone}
 import org.psesd.srx.shared.core.sif.SifRequestParameter
 
 import scala.xml.Node
@@ -33,6 +34,20 @@ class MongoDataSource {
     mongoClient.close()
   }
 
+  def connectMongoClient: MongoClient = {
+    var mongoClient: MongoClient = null.asInstanceOf[MongoClient]
+
+    if (PrsServer.mongoDbHost == "localhost") {
+      mongoClient = MongoClient(PrsServer.mongoDbHost, PrsServer.mongoDbPort.toInt)
+    } else {
+      val server = new ServerAddress(PrsServer.mongoDbHost, PrsServer.mongoDbPort.toInt)
+      val credentials = MongoCredential.createCredential(PrsServer.mongoDbName, PrsServer.mongoDbName, PrsServer.mongoDbPassword.toString.toArray)
+      mongoClient = MongoClient(server, List(credentials))
+    }
+
+    mongoClient
+  }
+
   private def deleteAdminUser(authorizedEntityXml: Node, usersTable: MongoCollection): Unit = {
     val adminUserQuery = MongoDBObject("email" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "email").text)
     usersTable.findAndRemove(adminUserQuery)
@@ -45,7 +60,7 @@ class MongoDataSource {
     deleteAdminUser(authorizedEntityXml, usersTable)
   }
 
-  private def insertAdminUser(usersTable: MongoCollection, authorizedEntityXml: Node): Unit = {
+  private def insertAdminUser(usersTable: MongoCollection, authorizedEntityXml: Node, organizationId: String): Unit = {
     val mainContactName = (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "name").text
     val mainContactNameArr = mainContactName.split(" ")
 
@@ -60,12 +75,21 @@ class MongoDataSource {
       lastName = mainContactNameArr(mainContactNameArr.length - 1)
     }
 
+    val userPermission = MongoDBObject.newBuilder
+    userPermission += "organization" -> organizationId
+    userPermission += "activateStatus" -> "Active"
+    userPermission += "activateDate" -> DateTime.now(DateTimeZone.UTC)
+    userPermission += "activate" -> "true"
+    userPermission += "role" -> "admin"
+
+
     val adminUser = MongoDBObject("email" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "email").text,
                                   "first_name" -> firstName,
                                   "middle_name" -> middleName,
                                   "last_name" -> lastName,
                                   "salt" -> PrsServer.mongoUserSalt,
                                   "hashedPassword" -> PrsServer.mongoUserHashedPassword)
+//    adminUser += "persmissions" -> userPermission.result()
 
     usersTable.save(adminUser)
   }
@@ -79,7 +103,11 @@ class MongoDataSource {
 
     organizationsTable.save(organization)
 
-    insertAdminUser(usersTable, authorizedEntityXml)
+    val query = MongoDBObject("name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text)
+    val savedOrganization = organizationsTable.findOne(query)
+    val organizationId = savedOrganization.get.get("_id").toString
+
+    insertAdminUser(usersTable, authorizedEntityXml, organizationId)
   }
 
   private def getAuthorizedEntity(authorizedEntityId: String): Node = {
@@ -121,19 +149,5 @@ class MongoDataSource {
                                             "authorizedEntityId" -> (authorizedEntityXml \ "authorizedEntity" \ "id").text.toInt)
 
     organizationsTable.update(query, updatedOrganization)
-  }
-
-  private def connectMongoClient: MongoClient = {
-    var mongoClient: MongoClient = null.asInstanceOf[MongoClient]
-
-    if (PrsServer.mongoDbHost == "localhost") {
-      mongoClient = MongoClient(PrsServer.mongoDbHost, PrsServer.mongoDbPort.toInt)
-    } else {
-      val server = new ServerAddress(PrsServer.mongoDbHost, PrsServer.mongoDbPort.toInt)
-      val credentials = MongoCredential.createCredential(PrsServer.mongoDbName, PrsServer.mongoDbName, PrsServer.mongoDbPassword.toString.toArray)
-      mongoClient = MongoClient(server, List(credentials))
-    }
-
-    mongoClient
   }
 }

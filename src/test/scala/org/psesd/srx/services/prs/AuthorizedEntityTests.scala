@@ -1,5 +1,6 @@
 package org.psesd.srx.services.prs
 
+import com.mongodb.casbah.commons.MongoDBObject
 import org.psesd.srx.shared.core.SrxResourceErrorResult
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestParameter, SifResponse}
@@ -9,6 +10,11 @@ class AuthorizedEntityTests extends FunSuite {
 
   var createdId: Int = 0
   var createdId2: Int = 0
+
+  val mongoDataSource = new MongoDataSource
+  val mongoClient = mongoDataSource.connectMongoClient
+  val mongoDb = mongoClient(PrsServer.mongoDbName)
+  val organizationsTable = mongoDb("organizations")
 
   test("constructor") {
     val id = 123
@@ -105,15 +111,23 @@ class AuthorizedEntityTests extends FunSuite {
     assert(result.exceptions.isEmpty)
     val resultBody = result.toXml.get.toXmlString
     assert(resultBody.contains("id=\"%s\"".format(createdId.toString)))
+
+    val authorizedEntityId = result.asInstanceOf[AuthorizedEntityResult].getId
+    val externalService = ExternalService(0, authorizedEntityId, Some("auth entity test"), Some("test service description"))
+    ExternalService.create(externalService, List[SifRequestParameter]())
+
+    val organizationQuery = MongoDBObject("name" -> authorizedEntity.name)
+    val organizationResult = organizationsTable.findOne(organizationQuery)
+    assert(organizationResult != None)
   }
 
   test("update id parameter no contact") {
     val authorizedEntity = AuthorizedEntity(0, "test UPDATED 2", None)
-    val result = AuthorizedEntity.update(authorizedEntity, List[SifRequestParameter](SifRequestParameter("id", createdId.toString)))
+    val result = AuthorizedEntity.update(authorizedEntity, List[SifRequestParameter](SifRequestParameter("id", createdId2.toString)))
     assert(result.success)
     assert(result.exceptions.isEmpty)
     val resultBody = result.toXml.get.toXmlString
-    assert(resultBody.contains("id=\"%s\"".format(createdId.toString)))
+    assert(resultBody.contains("id=\"%s\"".format(createdId2.toString)))
   }
 
   test("update duplicate") {
@@ -143,7 +157,7 @@ class AuthorizedEntityTests extends FunSuite {
     assert(result.success)
     assert(result.statusCode == SifHttpStatusCode.Ok)
     val resultBody = result.toJson.get.toJsonString
-    assert(resultBody.contains("test UPDATED 2"))
+    assert(resultBody.contains("test UPDATED 1"))
     assert(resultBody.contains("666-1234"))
   }
 
@@ -158,11 +172,19 @@ class AuthorizedEntityTests extends FunSuite {
     val result = AuthorizedEntity.delete(List[SifRequestParameter](SifRequestParameter("id", createdId.toString)))
     assert(result.success)
     assert(result.statusCode == SifHttpStatusCode.Ok)
+
+    val organizationQuery = MongoDBObject("name" -> "test UPDATED 1")
+    val organizationResult = organizationsTable.findOne(organizationQuery)
+    assert(organizationResult == None)
   }
 
   test("delete no contact") {
     val result = AuthorizedEntity.delete(List[SifRequestParameter](SifRequestParameter("id", createdId2.toString)))
     assert(result.success)
     assert(result.statusCode == SifHttpStatusCode.Ok)
+  }
+
+  def afterAll: Unit = {
+    mongoClient.close()
   }
 }
