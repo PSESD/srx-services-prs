@@ -8,7 +8,8 @@ class PersonnelTests extends FunSuite with BeforeAndAfterAll {
 
   var createdId: Int = 0
 
-  val authorizedEntity = AuthorizedEntity(0, "auth entity personnel test", None)
+  val contact = new Contact(0, Some("jon"), Some("director"), Some("jon@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("jon.com"))
+  val authorizedEntity = AuthorizedEntity(0, "auth entity personnel test", Some(contact))
   var authorizedEntityResult: AuthorizedEntityResult = _
 
   override def beforeAll {

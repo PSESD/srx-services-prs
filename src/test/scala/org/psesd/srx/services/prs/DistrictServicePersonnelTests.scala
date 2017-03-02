@@ -11,7 +11,8 @@ class DistrictServicePersonnelTests extends FunSuite with BeforeAndAfterAll {
   val district = District(0, "district join table test", None, None, None)
   var districtResult: DistrictResult = _
 
-  val authorizedEntity = AuthorizedEntity(0, "authorized entity join table test", None)
+  val contact = new Contact(0, Some("jon"), Some("director"), Some("jon@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("jon.com"))
+  val authorizedEntity = AuthorizedEntity(0, "authorized entity join table test", Some(contact))
   var authorizedEntityResult: AuthorizedEntityResult = _
 
   var externalServiceResult: ExternalServiceResult = _

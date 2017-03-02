@@ -102,7 +102,8 @@ class PrsServerTests extends FunSuite {
   test("create authorized entity xml") {
     if (Environment.isLocal) {
       val resource = PrsResource.AuthorizedEntities.toString
-      val authorizedEntity = AuthorizedEntity(1, "test xml", None)
+      val contact = new Contact(0, Some("joe"), Some("director"), Some("joe@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("joe.com"))
+      val authorizedEntity = AuthorizedEntity(1, "test xml", Some(contact))
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.generatorId = Some(TestValues.generatorId)
       sifRequest.body = Some(authorizedEntity.toXml.toXmlString)
@@ -117,7 +118,8 @@ class PrsServerTests extends FunSuite {
   test("create authorized entity json") {
     if (Environment.isLocal) {
       val resource = PrsResource.AuthorizedEntities.toString
-      val authorizedEntity = AuthorizedEntity(2, "test json", None)
+      val contact = new Contact(0, Some("jane"), Some("director"), Some("jane@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("jane.com"))
+      val authorizedEntity = AuthorizedEntity(2, "test json", Some(contact))
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.accept = Some(SifContentType.Json)
       sifRequest.contentType = Some(SifContentType.Json)
@@ -652,7 +654,8 @@ class PrsServerTests extends FunSuite {
       val resource = "%s/%s".format(PrsResource.AuthorizedEntities.toString, authorizedEntityIdXml.toString)
       val sifRequest = new SifRequest(TestValues.sifProvider, resource)
       sifRequest.generatorId = Some(TestValues.generatorId)
-      sifRequest.body = Some(AuthorizedEntity(authorizedEntityIdXml, "test UPDATED", None).toXml.toXmlString)
+      val contact = new Contact(0, Some("mel"), Some("director"), Some("mel@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("mel.com"))
+      sifRequest.body = Some(AuthorizedEntity(authorizedEntityIdXml, "test UPDATED", Some(contact)).toXml.toXmlString)
       // println("UPDATE RESOURCE: %s".format(resource))
       val response = new SifConsumer().update(sifRequest)
       // printlnResponse(response)
@@ -848,9 +851,9 @@ class PrsServerTests extends FunSuite {
       val sifRequest = new SifRequest(TestValues.sifProvider, resource, SifZone("highline"), SifContext("default"))
       sifRequest.generatorId = Some(TestValues.generatorId)
       sifRequest.body = Some(<filter/>.toString)
-      println("CREATE RESOURCE: %s".format(resource))
+//      println("CREATE RESOURCE: %s".format(resource))
       val response = new SifConsumer().update(sifRequest)
-      printlnResponse(response)
+//      printlnResponse(response)
       assert(response.statusCode.equals(SifHttpStatusCode.MethodNotAllowed))
     }
   }

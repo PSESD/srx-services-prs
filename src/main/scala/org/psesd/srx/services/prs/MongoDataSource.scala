@@ -76,12 +76,11 @@ class MongoDataSource {
       lastName = mainContactNameArr(mainContactNameArr.length - 1)
     }
 
-    val userPermission = MongoDBObject.newBuilder
-    userPermission += "organization" -> organizationId
-    userPermission += "activateStatus" -> "Active"
-    userPermission += "activateDate" -> DateTime.now(DateTimeZone.UTC)
-    userPermission += "activate" -> "true"
-    userPermission += "role" -> "admin"
+    val userPermission = MongoDBObject("organization" -> organizationId,
+                                        "activateStatus" -> "Active",
+                                        "activateDate" -> DateTime.now(DateTimeZone.UTC),
+                                        "activate" -> "true",
+                                        "role" -> "admin" )
 
 
     val adminUser = MongoDBObject("email" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "email").text,
@@ -90,7 +89,7 @@ class MongoDataSource {
                                   "last_name" -> lastName,
                                   "salt" -> PrsServer.mongoUserSalt,
                                   "hashedPassword" -> PrsServer.mongoUserHashedPassword)
-//    adminUser += "persmissions" -> userPermission.result()
+//                                  "permissions" -> userPermission)
 
     usersTable.save(adminUser)
   }
