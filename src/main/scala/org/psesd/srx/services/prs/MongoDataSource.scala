@@ -76,7 +76,7 @@ class MongoDataSource {
       lastName = mainContactNameArr(mainContactNameArr.length - 1)
     }
 
-    val userPermission = MongoDBObject("organization" -> organizationId,
+    val userPermission = $push("organization" -> organizationId,
                                         "activateStatus" -> "Active",
                                         "activateDate" -> DateTime.now(DateTimeZone.UTC),
                                         "activate" -> "true",
