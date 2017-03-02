@@ -111,7 +111,7 @@ object AuthorizedEntity extends PrsEntityService {
         if (mainContact != null && mainContact.length > 0) {
           Some(Contact(mainContact.head))
         } else {
-          None
+          throw new ArgumentNullException("mainContact parameter")
         }
       },
       None
@@ -130,43 +130,25 @@ object AuthorizedEntity extends PrsEntityService {
 
       var result: DatasourceResult = null
 
-      if (authorizedEntity.mainContact.isDefined) {
-
-        result = datasource.create(
-          "with new_contact as (" +
-            "insert into srx_services_prs.contact (" +
-            "id, name, title, email, phone, mailing_address, web_address) values (" +
-            "DEFAULT, ?, ?, ?, ?, ?, ?) " +
-            "RETURNING id) " +
-            "insert into srx_services_prs.authorized_entity (" +
-            "id, name, main_contact_id) values (" +
-            "DEFAULT, ?, (select id from new_contact)) " +
-            "RETURNING id;",
-          "id",
-          authorizedEntity.mainContact.get.name.orNull,
-          authorizedEntity.mainContact.get.title.orNull,
-          authorizedEntity.mainContact.get.email.orNull,
-          authorizedEntity.mainContact.get.phone.orNull,
-          authorizedEntity.mainContact.get.mailingAddress.orNull,
-          authorizedEntity.mainContact.get.webAddress.orNull,
-          authorizedEntity.name
-        )
-
-      } else {
-        result = datasource.create(
-          "with new_contact as (" +
-            "insert into srx_services_prs.contact (" +
-            "id) values (" +
-            "DEFAULT) " +
-            "RETURNING id) " +
-            "insert into srx_services_prs.authorized_entity (" +
-            "id, name, main_contact_id) values (" +
-            "DEFAULT, ?, (select id from new_contact)) " +
-            "RETURNING id;",
-          "id",
-          authorizedEntity.name
-        )
-      }
+      result = datasource.create(
+        "with new_contact as (" +
+          "insert into srx_services_prs.contact (" +
+          "id, name, title, email, phone, mailing_address, web_address) values (" +
+          "DEFAULT, ?, ?, ?, ?, ?, ?) " +
+          "RETURNING id) " +
+          "insert into srx_services_prs.authorized_entity (" +
+          "id, name, main_contact_id) values (" +
+          "DEFAULT, ?, (select id from new_contact)) " +
+          "RETURNING id;",
+        "id",
+        authorizedEntity.mainContact.get.name.orNull,
+        authorizedEntity.mainContact.get.title.orNull,
+        authorizedEntity.mainContact.get.email.orNull,
+        authorizedEntity.mainContact.get.phone.orNull,
+        authorizedEntity.mainContact.get.mailingAddress.orNull,
+        authorizedEntity.mainContact.get.webAddress.orNull,
+        authorizedEntity.name
+      )
 
       datasource.close()
 
@@ -344,37 +326,25 @@ object AuthorizedEntity extends PrsEntityService {
 
         var result: DatasourceResult = null
 
-        if (authorizedEntity.mainContact.isDefined) {
-
-          result = datasource.execute(
-            "begin;" +
-              "update srx_services_prs.contact set " +
-              "name = ?, title = ?, email = ?, phone = ?, mailing_address = ?, web_address = ? " +
-              "where id = (select main_contact_id from srx_services_prs.authorized_entity where id = ?); " +
-              "update srx_services_prs.authorized_entity set " +
-              "name = ? " +
-              "where id = ?;" +
-              "commit;",
-            authorizedEntity.mainContact.get.name.orNull,
-            authorizedEntity.mainContact.get.title.orNull,
-            authorizedEntity.mainContact.get.email.orNull,
-            authorizedEntity.mainContact.get.phone.orNull,
-            authorizedEntity.mainContact.get.mailingAddress.orNull,
-            authorizedEntity.mainContact.get.webAddress.orNull,
-            id.get,
-            authorizedEntity.name,
-            id.get
-          )
-
-        } else {
-          result = datasource.execute(
+        result = datasource.execute(
+          "begin;" +
+            "update srx_services_prs.contact set " +
+            "name = ?, title = ?, email = ?, phone = ?, mailing_address = ?, web_address = ? " +
+            "where id = (select main_contact_id from srx_services_prs.authorized_entity where id = ?); " +
             "update srx_services_prs.authorized_entity set " +
-              "name = ? " +
-              "where id = ?;",
-            authorizedEntity.name,
-            id.get
-          )
-        }
+            "name = ? " +
+            "where id = ?;" +
+            "commit;",
+          authorizedEntity.mainContact.get.name.orNull,
+          authorizedEntity.mainContact.get.title.orNull,
+          authorizedEntity.mainContact.get.email.orNull,
+          authorizedEntity.mainContact.get.phone.orNull,
+          authorizedEntity.mainContact.get.mailingAddress.orNull,
+          authorizedEntity.mainContact.get.webAddress.orNull,
+          id.get,
+          authorizedEntity.name,
+          id.get
+        )
 
         datasource.close()
 

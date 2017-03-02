@@ -9,12 +9,12 @@ import org.scalatest.FunSuite
 class AuthorizedEntityTests extends FunSuite {
 
   var createdId: Int = 0
-  var createdId2: Int = 0
 
   val mongoDataSource = new MongoDataSource
   val mongoClient = mongoDataSource.connectMongoClient
   val mongoDb = mongoClient(PrsServer.mongoDbName)
   val organizationsTable = mongoDb("organizations")
+  val usersTable = mongoDb("users")
 
   test("constructor") {
     val id = 123
@@ -62,20 +62,6 @@ class AuthorizedEntityTests extends FunSuite {
     assert(authorizedEntity.mainContact.get.name.get.equals(contactName))
   }
 
-  test("node no contact") {
-    val id = 123
-    val name = "test"
-    val authorizedEntity = AuthorizedEntity(
-      <authorizedEntity>
-        <id>{id}</id>
-        <name>{name}</name>
-      </authorizedEntity>,
-      None
-    )
-    assert(authorizedEntity.id.equals(id))
-    assert(authorizedEntity.name.equals(name))
-  }
-
   test("create") {
     val contact = new Contact(0, Some("jon"), Some("director"), Some("jon@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("jon.com"))
     val authorizedEntity = AuthorizedEntity(0, "authorized entity test", Some(contact))
@@ -86,17 +72,9 @@ class AuthorizedEntityTests extends FunSuite {
     assert(result.toXml.get.toXmlString.contains("id=\"%s\"".format(createdId.toString)))
   }
 
-  test("create with no contact") {
-    val authorizedEntity = AuthorizedEntity(0, "test no contact", None)
-    val result = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
-    createdId2 = result.getId
-    assert(result.success)
-    assert(result.exceptions.isEmpty)
-    assert(result.toXml.get.toXmlString.contains("id=\"%s\"".format(createdId2.toString)))
-  }
-
    test("create duplicate") {
-    val authorizedEntity = AuthorizedEntity(0, "authorized entity test", None)
+    val contact = new Contact(0, Some("jane"), Some("director"), Some("jane@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("jane.com"))
+    val authorizedEntity = AuthorizedEntity(0, "authorized entity test", Some(contact))
     val result = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[SrxResourceErrorResult]
     assert(!result.success)
     assert(result.statusCode == SifHttpStatusCode.BadRequest)
@@ -104,6 +82,9 @@ class AuthorizedEntityTests extends FunSuite {
   }
 
   test("update id parameter") {
+    val externalService = ExternalService(0, createdId, Some("auth entity test"), Some("test service description"))
+    ExternalService.create(externalService, List[SifRequestParameter]())
+
     val contact = new Contact(0, Some("jonny"), Some("director"), Some("jon@doe.com"), Some("666-1234"), Some("123 Spring St"), Some("jon.com"))
     val authorizedEntity = AuthorizedEntity(0, "test UPDATED 1", Some(contact))
     val result = AuthorizedEntity.update(authorizedEntity, List[SifRequestParameter](SifRequestParameter("id", createdId.toString)))
@@ -112,22 +93,13 @@ class AuthorizedEntityTests extends FunSuite {
     val resultBody = result.toXml.get.toXmlString
     assert(resultBody.contains("id=\"%s\"".format(createdId.toString)))
 
-    val authorizedEntityId = result.asInstanceOf[AuthorizedEntityResult].getId
-    val externalService = ExternalService(0, authorizedEntityId, Some("auth entity test"), Some("test service description"))
-    ExternalService.create(externalService, List[SifRequestParameter]())
-
     val organizationQuery = MongoDBObject("name" -> authorizedEntity.name)
     val organizationResult = organizationsTable.findOne(organizationQuery)
     assert(organizationResult != None)
-  }
 
-  test("update id parameter no contact") {
-    val authorizedEntity = AuthorizedEntity(0, "test UPDATED 2", None)
-    val result = AuthorizedEntity.update(authorizedEntity, List[SifRequestParameter](SifRequestParameter("id", createdId2.toString)))
-    assert(result.success)
-    assert(result.exceptions.isEmpty)
-    val resultBody = result.toXml.get.toXmlString
-    assert(resultBody.contains("id=\"%s\"".format(createdId2.toString)))
+    val userQuery = MongoDBObject("first_name" -> "jonny")
+    val userResult = usersTable.findOne(userQuery)
+    assert(userResult != None)
   }
 
   test("update duplicate") {
@@ -176,12 +148,10 @@ class AuthorizedEntityTests extends FunSuite {
     val organizationQuery = MongoDBObject("name" -> "test UPDATED 1")
     val organizationResult = organizationsTable.findOne(organizationQuery)
     assert(organizationResult == None)
-  }
 
-  test("delete no contact") {
-    val result = AuthorizedEntity.delete(List[SifRequestParameter](SifRequestParameter("id", createdId2.toString)))
-    assert(result.success)
-    assert(result.statusCode == SifHttpStatusCode.Ok)
+    val userQuery = MongoDBObject("email" -> "jon@doe.com")
+    val userResult = usersTable.findOne(userQuery)
+    assert(userResult == None)
   }
 
   def afterAll: Unit = {

@@ -3,6 +3,7 @@ package org.psesd.srx.services.prs
 import com.mongodb.ServerAddress
 import com.mongodb.casbah.{MongoClient, MongoCollection, MongoCredential}
 import com.mongodb.casbah.commons.{MongoDBList, MongoDBObject}
+import com.mongodb.casbah.Imports._
 import org.joda.time.{DateTime, DateTimeZone}
 import org.psesd.srx.shared.core.sif.SifRequestParameter
 
@@ -137,7 +138,7 @@ class MongoDataSource {
                                          "middle_name" -> middleName,
                                          "last_name" -> lastName)
 
-    usersTable.update(query, updatedAdminUser)
+    usersTable.update(query, updatedAdminUser, true)
   }
 
   private def updateOrganization(organizationsTable: MongoCollection, authorizedEntityXml: Node, usersTable: MongoCollection): Unit = {
@@ -146,8 +147,9 @@ class MongoDataSource {
     val updatedOrganization = MongoDBObject("name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text,
                                             "website" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
                                             "url" -> PrsServer.serverName,
-                                            "authorizedEntityId" -> (authorizedEntityXml \ "authorizedEntity" \ "id").text.toInt)
+                                            "authorizedEntityId" -> (authorizedEntityXml \ "authorizedEntity" \ "id").text)
 
-    organizationsTable.update(query, updatedOrganization)
+    organizationsTable.update(query, updatedOrganization, true)
+    updateAdminUser(usersTable, authorizedEntityXml)
   }
 }
