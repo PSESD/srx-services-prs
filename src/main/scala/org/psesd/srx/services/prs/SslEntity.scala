@@ -21,7 +21,6 @@ trait SslEntity {
 
   def getAuthorizedEntity(authorizedEntityId: String): Node = {
     val authorizedEntityResult = AuthorizedEntity.query(List[SifRequestParameter](SifRequestParameter("id", authorizedEntityId)))
-    val xml = authorizedEntityResult.toXml
     authorizedEntityResult.toXml.get
   }
 

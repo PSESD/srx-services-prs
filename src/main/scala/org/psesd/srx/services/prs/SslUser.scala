@@ -11,29 +11,39 @@ import org.mongodb.scala.bson.BsonValue
   */
 object SslUser extends SslEntity {
 
-  def apply(authorizedEntityId: String, organizationId: BsonValue): Document = {
+  def apply(authorizedEntityId: String, organizationId: BsonValue, createdAt: BsonValue = null): Document = {
     val authorizedEntityXml = getAuthorizedEntity(authorizedEntityId)
     val mainContact = (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "name").text
     val contact = contactName(mainContact)
     val timestamp = bsonTimeStamp
 
-    val userPermission = Document("organization" -> organizationId,
+    var userPermission = Document("organization" -> organizationId,
       "activateStatus" -> "Active",
-      "activateDate" -> timestamp,
       "activate" -> "true",
       "role" -> "admin")
 
-    Document( "email" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "email").text,
+    var adminUser = Document( "email" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "email").text,
       "first_name" -> contact(0),
       "middle_name" -> contact(1),
       "last_name" -> contact(2),
       "salt" -> PrsServer.mongoUserSalt,
       "hashedPassword" -> PrsServer.mongoUserHashedPassword,
       "last_updated" -> timestamp,
-      "created" -> timestamp,
-      "created_at" -> timestamp,
       "updated_at" -> timestamp,
       "permissions" -> List(userPermission))
+
+
+    if (createdAt != null) {
+      userPermission ++= Document("activateDate" -> createdAt)
+      adminUser ++= Document("created_at" -> createdAt)
+      adminUser ++= Document("created" -> createdAt)
+    } else {
+      userPermission ++= Document("activateDate" -> timestamp)
+      adminUser ++= Document("created_at" -> timestamp)
+      adminUser ++= Document("created" -> timestamp)
+    }
+
+    adminUser
   }
 
   private def contactName(mainContactName: String): Array[String] = {

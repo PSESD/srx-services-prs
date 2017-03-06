@@ -1,8 +1,5 @@
 package org.psesd.srx.services.prs
 
-import org.bson.BsonValue
-import org.mongodb.scala.{Completed, Document, Observable, Observer, Subscription}
-import org.mongodb.scala.model.Filters.equal
 import org.psesd.srx.shared.core.SrxResourceErrorResult
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestParameter}
@@ -16,10 +13,6 @@ class ExternalServiceTests extends FunSuite with BeforeAndAfterAll {
   val contact = new Contact(0, Some("jon"), Some("director"), Some("jon@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("jon.com"))
   val authorizedEntity: AuthorizedEntity = AuthorizedEntity(0, "external service test", Some(contact))
   var authorizedEntityResult: AuthorizedEntityResult = _
-
-  val mongoDataSource = new MongoDataSource
-  val organizationsCollection = mongoDataSource.retrieveCollection("orgnaizations")
-  val usersCollection = mongoDataSource.retrieveCollection("users")
 
   override def beforeAll: Unit = {
     authorizedEntityResult = AuthorizedEntity.create(authorizedEntity, List[SifRequestParameter]()).asInstanceOf[AuthorizedEntityResult]
@@ -73,19 +66,6 @@ class ExternalServiceTests extends FunSuite with BeforeAndAfterAll {
     assert(result.success)
     assert(result.exceptions.isEmpty)
     assert(result.toXml.get.toXmlString.contains("id=\"%s\"".format(createdId.toString)))
-
-//    val observable: Observable[Document] = organizationsCollection.find(Document("name" -> authorizedEntity.name))
-//
-//    observable.subscribe(new Observer[Document] {
-//      override def onSubscribe(subscription: Subscription): Unit = subscription.request(1)
-//      override def onNext(result: Document): Unit = {
-//        val r = result
-////        assert(result.get("externalServiceId").get == )
-//        val h = "hello"
-//      }
-//      override def onError(e: Throwable): Unit = println("Failed" + e.getMessage)
-//      override def onComplete(): Unit = println("Queried organization")
-//    })
   }
 
   test("create duplicate") {
@@ -161,7 +141,5 @@ class ExternalServiceTests extends FunSuite with BeforeAndAfterAll {
 
   override def afterAll: Unit = {
     AuthorizedEntity.delete(List[SifRequestParameter](SifRequestParameter("id", authorizedEntityResult.getId.toString)))
-
-    mongoDataSource.close
   }
 }
