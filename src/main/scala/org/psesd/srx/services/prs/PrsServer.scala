@@ -32,6 +32,7 @@ object PrsServer extends SrxServer {
   private final val MongoDbPassword = "MONGODB_PASSWORD"
   private final val MongoUserSalt = "MONGO_USER_SALT"
   private final val MongoUserHashedPassword = "MONGO_USER_HASHED_PASSWORD"
+  private final val MongoUrl = "MONGO_URL"
 
   private final val AuthorizedEntityIdParam = "authorizedEntityId"
   private final val DataSetIdParam = "dataSetId"
@@ -52,6 +53,7 @@ object PrsServer extends SrxServer {
   lazy val mongoDbPassword = Environment.getProperty(MongoDbPassword).orElse("")
   lazy val mongoUserSalt = Environment.getProperty(MongoUserSalt)
   lazy val mongoUserHashedPassword = Environment.getProperty(MongoUserHashedPassword)
+  lazy val mongoUrl = Environment.getProperty(MongoUrl)
 
   val sifProvider: SifProvider = new SifProvider(
     SifProviderUrl(Environment.getProperty(ServerUrlKey)),

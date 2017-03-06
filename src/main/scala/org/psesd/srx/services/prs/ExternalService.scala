@@ -1,6 +1,8 @@
 package org.psesd.srx.services.prs
 
 import org.json4s.JValue
+import org.mongodb.scala.bson.BsonValue
+import org.mongodb.scala.{Document, MongoCollection, MongoDatabase}
 import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
 import org.psesd.srx.shared.core.{sif, _}
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
@@ -128,7 +130,7 @@ object ExternalService extends PrsEntityService {
 
       if (result.success) {
         val mongoDataSource = new MongoDataSource
-        mongoDataSource.action("insert", externalService.authorizedEntityId.toString, result.id.get)
+        mongoDataSource.insertOrganization(externalService.authorizedEntityId.toString, result.id.get)
 
         PrsServer.logSuccessMessage(
           PrsResource.ExternalServices.toString,
@@ -187,7 +189,7 @@ object ExternalService extends PrsEntityService {
 
         if (result.success) {
           val mongoDataSource = new MongoDataSource
-          mongoDataSource.action("delete", authorizedEntityId)
+          mongoDataSource.deleteOrganization(authorizedEntityId)
 
           PrsServer.logSuccessMessage(
             PrsResource.ExternalServices.toString,

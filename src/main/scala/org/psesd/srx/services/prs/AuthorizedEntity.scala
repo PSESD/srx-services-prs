@@ -195,7 +195,7 @@ object AuthorizedEntity extends PrsEntityService {
     } else {
       try {
         val mongoDataSource = new MongoDataSource
-        mongoDataSource.action("delete", id.get.toString)
+        mongoDataSource.deleteOrganization(id.get.toString)
 
         val datasource = new Datasource(datasourceConfig)
 
@@ -349,8 +349,8 @@ object AuthorizedEntity extends PrsEntityService {
         datasource.close()
 
         if (result.success) {
-          val mongoDataSource = new MongoDataSource
-          mongoDataSource.action("update", id.get.toString)
+//          val mongoDataSource = new MongoDataSource
+//          mongoDataSource.updateOrganization(id.get.toString)
 
           PrsServer.logSuccessMessage(
             PrsResource.AuthorizedEntities.toString,

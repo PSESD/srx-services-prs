@@ -1,6 +1,5 @@
 package org.psesd.srx.services.prs
 
-import com.mongodb.casbah.commons.MongoDBObject
 import org.psesd.srx.shared.core.SrxResourceErrorResult
 import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestParameter, SifResponse}
@@ -10,11 +9,11 @@ class AuthorizedEntityTests extends FunSuite {
 
   var createdId: Int = 0
 
-  val mongoDataSource = new MongoDataSource
-  val mongoClient = mongoDataSource.connectMongoClient
-  val mongoDb = mongoClient(PrsServer.mongoDbName)
-  val organizationsTable = mongoDb("organizations")
-  val usersTable = mongoDb("users")
+//  val mongoDataSource = new MongoDataSource
+//  val mongoClient = mongoDataSource.connectMongoClient
+//  val mongoDb = mongoClient(PrsServer.mongoDbName)
+//  val organizationsTable = mongoDb("organizations")
+//  val usersTable = mongoDb("users")
 
   test("constructor") {
     val id = 123
@@ -93,13 +92,13 @@ class AuthorizedEntityTests extends FunSuite {
     val resultBody = result.toXml.get.toXmlString
     assert(resultBody.contains("id=\"%s\"".format(createdId.toString)))
 
-    val organizationQuery = MongoDBObject("name" -> authorizedEntity.name)
-    val organizationResult = organizationsTable.findOne(organizationQuery)
-    assert(organizationResult != None)
-
-    val userQuery = MongoDBObject("first_name" -> "jonny")
-    val userResult = usersTable.findOne(userQuery)
-    assert(userResult != None)
+//    val organizationQuery = MongoDBObject("name" -> authorizedEntity.name)
+//    val organizationResult = organizationsTable.findOne(organizationQuery)
+//    assert(organizationResult != None)
+//
+//    val userQuery = MongoDBObject("first_name" -> "jonny")
+//    val userResult = usersTable.findOne(userQuery)
+//    assert(userResult != None)
   }
 
   test("update duplicate") {
@@ -144,17 +143,17 @@ class AuthorizedEntityTests extends FunSuite {
     val result = AuthorizedEntity.delete(List[SifRequestParameter](SifRequestParameter("id", createdId.toString)))
     assert(result.success)
     assert(result.statusCode == SifHttpStatusCode.Ok)
-
-    val organizationQuery = MongoDBObject("name" -> "test UPDATED 1")
-    val organizationResult = organizationsTable.findOne(organizationQuery)
-    assert(organizationResult == None)
-
-    val userQuery = MongoDBObject("email" -> "jon@doe.com")
-    val userResult = usersTable.findOne(userQuery)
-    assert(userResult == None)
   }
-
-  def afterAll: Unit = {
-    mongoClient.close()
-  }
+//    val organizationQuery = MongoDBObject("name" -> "test UPDATED 1")
+//    val organizationResult = organizationsTable.findOne(organizationQuery)
+//    assert(organizationResult == None)
+//
+//    val userQuery = MongoDBObject("email" -> "jon@doe.com")
+//    val userResult = usersTable.findOne(userQuery)
+//    assert(userResult == None)
+//  }
+//
+//  def afterAll: Unit = {
+//    mongoClient.close()
+//  }
 }

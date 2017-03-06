@@ -14,9 +14,8 @@ lazy val jodaConvertVersion = "1.8.1"
 lazy val jodaTimeVersion = "2.9.4"
 lazy val json4sVersion = "3.4.0"
 lazy val scalaTestVersion = "2.2.6"
-lazy val casbahVersion = "3.1.1"
-lazy val reactiveMongoVersion = "0.12.1"
-lazy val tepkinVersion = "0.6"
+lazy val casbahVersion = "2.6.5"
+lazy val mongoScalaDriverVersion = "1.2.1"
 
 // Date/time
 libraryDependencies ++= Seq(
@@ -54,8 +53,13 @@ libraryDependencies ++= Seq(
 )
 
 //Casbah MongoDB Driver
+//libraryDependencies ++= Seq(
+//  "org.mongodb" % "casbah-core_2.9.1" % casbahVersion
+//)
+
+// Mongo Scala Driver
 libraryDependencies ++= Seq(
-  "org.mongodb" %% "casbah" % casbahVersion
+  "org.mongodb.scala" % "mongo-scala-driver_2.11" % mongoScalaDriverVersion
 )
 
 // Build info

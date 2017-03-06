@@ -1,13 +1,17 @@
 package org.psesd.srx.services.prs
 
 import com.mongodb.ServerAddress
-import com.mongodb.casbah.{MongoClient, MongoCollection, MongoCredential}
-import com.mongodb.casbah.commons.{MongoDBList, MongoDBObject}
-import com.mongodb.casbah.Imports._
+import org.bson.BsonValue
 import org.joda.time.{DateTime, DateTimeZone}
-import org.psesd.srx.shared.core.sif.SifRequestParameter
+import org.mongodb.scala.bson.{BsonDateTime, BsonValue}
+import org.mongodb.scala.{Completed, Document, MongoClient, MongoCollection, MongoDatabase, Observable, Observer, Subscription, result}
+import org.mongodb.scala.model.Filters._
+import org.mongodb.scala.result.DeleteResult
+import org.psesd.srx.shared.core.sif.{SifRequestParameter, SifTimestamp}
+import org.mongodb.scala.model.Updates._
 
 import scala.xml.Node
+import scalaz.std.set
 
 /** MongoDB Connection for Student Success Link Data
   *
@@ -15,140 +19,163 @@ import scala.xml.Node
   * @since 1.0
   * @author Margarett Ly (iTrellis, LLC)
   */
-class MongoDataSource {
+class MongoDataSource extends SslEntity {
 
-  def action(action: String, authorizedEntityId: String, externalServiceId: String = null): Unit = {
-    val mongoClient = connectMongoClient
-    val mongoDb = mongoClient(PrsServer.mongoDbName)
+  private var mongoClient: MongoClient = _
+  private var mongoDb: MongoDatabase = _
 
-    val organizationsTable = mongoDb("organizations")
-    val usersTable = mongoDb("users")
-
-    val authorizedEntityXml = getAuthorizedEntity(authorizedEntityId)
-
-    action match {
-      case "delete"  => deleteOrganization(organizationsTable, authorizedEntityXml, usersTable)
-      case "insert"  => insertOrganization(organizationsTable, authorizedEntityXml, externalServiceId, usersTable)
-      case "update"  => updateOrganization(organizationsTable, authorizedEntityXml, usersTable)
-    }
-
+  def close: Unit = {
     mongoClient.close()
   }
 
-  def connectMongoClient: MongoClient = {
-    var mongoClient: MongoClient = null.asInstanceOf[MongoClient]
+  private def connectToDatabase: MongoDatabase = {
+    if (mongoClient == null) mongoClient = MongoClient(PrsServer.mongoUrl)
+    if (mongoDb == null) mongoDb = mongoClient.getDatabase(PrsServer.mongoDbName)
 
-    if (PrsServer.mongoDbHost == "localhost") {
-      mongoClient = MongoClient(PrsServer.mongoDbHost, PrsServer.mongoDbPort.toInt)
-    } else {
-      val server = new ServerAddress(PrsServer.mongoDbHost, PrsServer.mongoDbPort.toInt)
-      val credentials = MongoCredential.createCredential(PrsServer.mongoDbName, PrsServer.mongoDbName, PrsServer.mongoDbPassword.toString.toArray)
-      mongoClient = MongoClient(server, List(credentials))
-    }
-
-    mongoClient
+    mongoDb
   }
 
-  private def deleteAdminUser(authorizedEntityXml: Node, usersTable: MongoCollection): Unit = {
-    val adminUserQuery = MongoDBObject("email" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "email").text)
-    usersTable.findAndRemove(adminUserQuery)
+  def retrieveCollection(name: String): MongoCollection[Document] = {
+    connectToDatabase
+    mongoDb.getCollection(name)
   }
 
-  private def deleteOrganization(organizationsTable: MongoCollection, authorizedEntityXml: Node, usersTable: MongoCollection): Unit = {
-    val authorizedEntityQuery = MongoDBObject("name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text)
-    organizationsTable.findAndRemove(authorizedEntityQuery)
+  private def deleteAdminUser(authorizedEntityXml: Node): Unit = {
+    val collection = retrieveCollection("users")
 
-    deleteAdminUser(authorizedEntityXml, usersTable)
+    val email = (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "email").text
+    val observable: Observable[DeleteResult] = collection.deleteOne(equal("email", email))
+
+    observable.subscribe(new Observer[DeleteResult] {
+      override def onSubscribe(subscription: Subscription): Unit = subscription.request(1)
+      override def onNext(result: DeleteResult): Unit = println("Deleted Admin User")
+      override def onError(e: Throwable): Unit = println(e.toString)
+      override def onComplete(): Unit = close
+    })
   }
 
-  private def insertAdminUser(usersTable: MongoCollection, authorizedEntityXml: Node, organizationId: String): Unit = {
-    val mainContactName = (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "name").text
-    val mainContactNameArr = mainContactName.split(" ")
+  def deleteOrganization(authorizedEntityId: String): Unit = {
+    val authorizedEntityXml = getAuthorizedEntity(authorizedEntityId)
 
-    val firstName = mainContactNameArr(0)
-    var middleName = ""
-    var lastName = ""
+    val collection = retrieveCollection("organizations")
+    val observable: Observable[DeleteResult] = collection.deleteOne(equal("name", (authorizedEntityXml \ "authorizedEntity" \ "name").text))
 
-    if (mainContactNameArr.length == 2) {
-      lastName = mainContactNameArr(1)
-    } else if (mainContactNameArr.length >= 3) {
-      middleName = mainContactNameArr(1)
-      lastName = mainContactNameArr(mainContactNameArr.length - 1)
-    }
-
-    val userPermission = $push("organization" -> organizationId,
-                                        "activateStatus" -> "Active",
-                                        "activateDate" -> DateTime.now(DateTimeZone.UTC),
-                                        "activate" -> "true",
-                                        "role" -> "admin" )
-
-
-    val adminUser = MongoDBObject("email" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "email").text,
-                                  "first_name" -> firstName,
-                                  "middle_name" -> middleName,
-                                  "last_name" -> lastName,
-                                  "salt" -> PrsServer.mongoUserSalt,
-                                  "hashedPassword" -> PrsServer.mongoUserHashedPassword)
-//                                  "permissions" -> userPermission)
-
-    usersTable.save(adminUser)
+    observable.subscribe(new Observer[DeleteResult] {
+      override def onSubscribe(subscription: Subscription): Unit = subscription.request(1)
+      override def onNext(result: DeleteResult): Unit = deleteAdminUser(authorizedEntityXml)
+      override def onError(e: Throwable): Unit = println("Failed" + e.getMessage)
+      override def onComplete(): Unit = println("Deleted Organization")
+    })
   }
 
-  private def insertOrganization(organizationsTable: MongoCollection, authorizedEntityXml: Node, externalServiceId: String, usersTable: MongoCollection): Unit = {
-    val organization = MongoDBObject( "name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text,
-                                      "website" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
-                                      "url" -> PrsServer.serverName,
-                                      "authorizedEntityId" -> (authorizedEntityXml \ "authorizedEntity" \ "id").text.toInt,
-                                      "externalServiceId" -> externalServiceId.toInt  )
+  def insertAdminUser(authorizedEntityId: String, organizationId: BsonValue): Unit = {
+    val adminUser = SslUser(authorizedEntityId, organizationId)
+    val collection = retrieveCollection("users")
 
-    organizationsTable.save(organization)
+    val observable: Observable[Completed] = collection.insertOne(adminUser)
 
-    val query = MongoDBObject("name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text)
-    val savedOrganization = organizationsTable.findOne(query)
-    val organizationId = savedOrganization.get.get("_id").toString
-
-    insertAdminUser(usersTable, authorizedEntityXml, organizationId)
+    observable.subscribe(new Observer[Completed] {
+      override def onNext(result: Completed): Unit = println("Inserted Admin User")
+      override def onError(e: Throwable): Unit = println(e.toString)
+      override def onComplete(): Unit = close
+    })
   }
 
-  private def getAuthorizedEntity(authorizedEntityId: String): Node = {
-    val authorizedEntityResult = AuthorizedEntity.query(List[SifRequestParameter](SifRequestParameter("id", authorizedEntityId)))
-    authorizedEntityResult.toXml.get
+  def insertOrganization(authorizedEntityId: String, externalServiceId: String): Unit = {
+    val organization = SslOrganization(authorizedEntityId, externalServiceId)
+    val collection = retrieveCollection("organizations")
+
+    val observable: Observable[Completed] = collection.insertOne(organization)
+
+    observable.subscribe(new Observer[Completed] {
+      override def onNext(result: Completed): Unit = println("Inserted Organization")
+      override def onError(e: Throwable): Unit = println(e.toString)
+      override def onComplete(): Unit = {
+        val authorizedEntityName = organization.get("name").get
+        queryOrganization(collection, authorizedEntityId, authorizedEntityName)
+      }
+    })
   }
 
-  private def updateAdminUser(usersTable: MongoCollection, authorizedEntityXml: Node) = {
-    val query = MongoDBObject("email" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "email").text)
+  def queryOrganization(collection: MongoCollection[Document], authorizedEntityId: String, authorizedEntityName: BsonValue): Unit = {
+    val observable: Observable[Document] = collection.find(equal("name", authorizedEntityName))
 
-    val mainContactName = (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "name").text
-    val mainContactNameArr = mainContactName.split(" ")
-
-    val firstName = mainContactNameArr(0)
-    var middleName = ""
-    var lastName = ""
-
-    if (mainContactNameArr.length == 2) {
-      lastName = mainContactNameArr(1)
-    } else if (mainContactNameArr.length >= 3) {
-      middleName = mainContactNameArr(1)
-      lastName = mainContactNameArr(mainContactNameArr.length - 1)
-    }
-
-    val updatedAdminUser = MongoDBObject("email" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "email").text,
-                                         "first_name" -> firstName,
-                                         "middle_name" -> middleName,
-                                         "last_name" -> lastName)
-
-    usersTable.update(query, updatedAdminUser, true)
+    observable.subscribe(new Observer[Document] {
+      override def onSubscribe(subscription: Subscription): Unit = subscription.request(1)
+      override def onNext(result: Document): Unit = {
+        val organizationId = result.get("_id").get
+        insertAdminUser(authorizedEntityId, organizationId)
+      }
+      override def onError(e: Throwable): Unit = println("Failed" + e.getMessage)
+      override def onComplete(): Unit = println("Queried")
+    })
   }
 
-  private def updateOrganization(organizationsTable: MongoCollection, authorizedEntityXml: Node, usersTable: MongoCollection): Unit = {
-    val query = MongoDBObject("authorizedEntityId" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text)
+//
+//  private def updateAdminUser(usersTable: MongoCollection, authorizedEntityXml: Node) = {
+//    val query = MongoDBObject("email" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "email").text)
+//
+//    val mainContactName = (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "name").text
+//    val mainContactNameArr = mainContactName.split(" ")
+//
+//    val firstName = mainContactNameArr(0)
+//    var middleName = ""
+//    var lastName = ""
+//
+//    if (mainContactNameArr.length == 2) {
+//      lastName = mainContactNameArr(1)
+//    } else if (mainContactNameArr.length >= 3) {
+//      middleName = mainContactNameArr(1)
+//      lastName = mainContactNameArr(mainContactNameArr.length - 1)
+//    }
+//
+//    val updatedAdminUser = MongoDBObject("email" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "email").text,
+//                                         "first_name" -> firstName,
+//                                         "middle_name" -> middleName,
+//                                         "last_name" -> lastName)
+//
+//    usersTable.update(query, updatedAdminUser, true)
+//  }
 
-    val updatedOrganization = MongoDBObject("name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text,
-                                            "website" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
-                                            "url" -> PrsServer.serverName,
-                                            "authorizedEntityId" -> (authorizedEntityXml \ "authorizedEntity" \ "id").text)
+//  def updateOrganization(authorizedEntityId: String): Unit = {
+//    val authorizedEntityXml = getAuthorizedEntity(authorizedEntityId)
+//    val organization = SslOrganization(authorizedEntityId)
+//
+//    val collection = retrieveCollection("organizations")
+//    val query = equal("name", (authorizedEntityXml \ "authorizedEntity" \ "name").text)
+//    val timestamp = bsonTimeStamp
+//
+//
+////    val observable: Observable[Document] = collection.find(equal("name", (authorizedEntityXml \ "authorizedEntity" \ "name").text))
+////
+////    observable.subscribe(new Observer[Document] {
+////      override def onSubscribe(subscription: Subscription): Unit = subscription.request(1)
+////      override def onNext(result: Document): Unit = {
+////        val organizationId = result.get("_id").get
+////        val r = result
+////        val t = ""
+////      }
+////      override def onError(e: Throwable): Unit = println("Failed" + e.getMessage)
+////      override def onComplete(): Unit = println("Queried")
+////    })
+//
+//
+//    val observable: Observable[result.UpdateResult] = collection.replaceOne(query, organization)
+//
+//    observable.subscribe(new Observer[result.UpdateResult] {
+//      override def onSubscribe(subscription: Subscription): Unit = subscription.request(1)
+//      override def onNext(updatedResult: result.UpdateResult): Unit = {
+//        val organizationId = updatedResult
+//        val test =""
+//      }
+//      override def onError(e: Throwable): Unit = println("Failed" + e.getMessage)
+//      override def onComplete(): Unit = println("Queried")
+//    })
+//
 
-    organizationsTable.update(query, updatedOrganization, true)
-    updateAdminUser(usersTable, authorizedEntityXml)
-  }
+
+//    combine(set("quantity", 11),
+//      set("total", 30.40),
+
+//  }
 }
