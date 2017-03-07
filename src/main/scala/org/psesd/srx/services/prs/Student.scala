@@ -183,7 +183,7 @@ object Student extends PrsEntityService {
           "Xsre refresh request submitted for student " + student.districtStudentId)
 
 
-        insertStudentIntoSSLDatabase(student, requestParams, result.id.get)
+        insertStudentIntoSSLDatabase(student, requestParams, result.id.get, zone)
 
         val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
         if(responseFormat.equals(SrxResponseFormat.Object)) {
@@ -224,7 +224,7 @@ object Student extends PrsEntityService {
 
   }
 
-  private def insertStudentIntoSSLDatabase(student: Student, requestParams: SifRequestParameterCollection, studentDbId : String) : Unit = {
+  private def insertStudentIntoSSLDatabase(student: Student, requestParams: SifRequestParameterCollection, studentDbId : String, zone: String) : Unit = {
     val sslDataSource = new MongoDataSource
     val students = sslDataSource.retrieveCollection("students")
     val organizationsCollection : MongoCollection[Document] = sslDataSource.retrieveCollection("organizations")
@@ -250,7 +250,7 @@ object Student extends PrsEntityService {
         "_id" -> bson.BsonObjectId(String.format("%024x", new BigInteger(1, studentDbId.getBytes))),
         "district_student_id" -> student.districtStudentId,
         "organization" -> orgId,
-        "school_district" -> requestParams("zoneId").getOrElse("")
+        "school_district" -> zone
       )
 
       //perform insert
