@@ -194,8 +194,9 @@ object AuthorizedEntity extends PrsEntityService {
       SrxResourceErrorResult(SifHttpStatusCode.BadRequest, new ArgumentInvalidException("id parameter"))
     } else {
       try {
+        val authorizedEntityXml = AuthorizedEntity.query(List[SifRequestParameter](SifRequestParameter("id", id.get.toString))).toXml.get
         val mongoDataSource = new MongoDataSource
-        mongoDataSource.deleteOrganization(id.get.toString)
+        mongoDataSource.deleteOrganization(authorizedEntityXml)
 
         val datasource = new Datasource(datasourceConfig)
 

@@ -5,7 +5,9 @@ import org.mongodb.scala.bson.{BsonInt32, BsonValue}
 import org.mongodb.scala.{Completed, Document, MongoClient, MongoCollection, MongoDatabase, Observable, Observer, Subscription}
 import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.result.{DeleteResult, UpdateResult}
-import org.psesd.srx.shared.core.sif.{SifRequestParameter}
+import org.psesd.srx.shared.core.sif.SifRequestParameter
+
+import scala.xml.Node
 
 /** MongoDB Connection for Student Success Link Data
   *
@@ -34,11 +36,8 @@ class MongoDataSource {
     mongoDb.getCollection(name)
   }
 
-  private def deleteAdminUser(authorizedEntityId: String): Unit = {
+  private def deleteAdminUser(authorizedEntityXml: Node): Unit = {
     val collection = retrieveCollection("users")
-
-    val authorizedEntityResult = AuthorizedEntity.query(List[SifRequestParameter](SifRequestParameter("id", authorizedEntityId)))
-    val authorizedEntityXml = authorizedEntityResult.toXml.get
 
     val email = (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "email").text
     val observable: Observable[DeleteResult] = collection.deleteOne(equal("email", email))
@@ -51,13 +50,14 @@ class MongoDataSource {
     })
   }
 
-  def deleteOrganization(authorizedEntityId: String): Unit = {
+  def deleteOrganization(authorizedEntityXml: Node): Unit = {
+    val authorizedEntityId = (authorizedEntityXml \ "authorizedEntity" \ "id").text
     val collection = retrieveCollection("organizations")
     val observable: Observable[DeleteResult] = collection.deleteOne(equal("authorizedEntityId", BsonInt32(authorizedEntityId.toInt)))
 
     observable.subscribe(new Observer[DeleteResult] {
       override def onSubscribe(subscription: Subscription): Unit = subscription.request(1)
-      override def onNext(result: DeleteResult): Unit = deleteAdminUser(authorizedEntityId)
+      override def onNext(result: DeleteResult): Unit = deleteAdminUser(authorizedEntityXml)
       override def onError(e: Throwable): Unit = println("Failed" + e.getMessage)
       override def onComplete(): Unit = println("Deleted Organization")
     })

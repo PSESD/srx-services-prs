@@ -19,20 +19,17 @@ import scala.concurrent.ExecutionContext
 object PrsServer extends SrxServer {
 
   private final val ServerUrlKey = "SERVER_URL"
-  private final val ServerName = "SERVER_NAME"
 
   private final val DatasourceClassNameKey = "DATASOURCE_CLASS_NAME"
   private final val DatasourceMaxConnectionsKey = "DATASOURCE_MAX_CONNECTIONS"
   private final val DatasourceTimeoutKey = "DATASOURCE_TIMEOUT"
   private final val DatasourceUrlKey = "DATASOURCE_URL"
 
-  private final val MongoDbHost = "MONGODB_HOST"
-  private final val MongoDbPort = "MONGODB_PORT"
   private final val MongoDbName = "MONGODB_NAME"
-  private final val MongoDbPassword = "MONGODB_PASSWORD"
   private final val MongoUserSalt = "MONGO_USER_SALT"
   private final val MongoUserHashedPassword = "MONGO_USER_HASHED_PASSWORD"
   private final val MongoUrl = "MONGO_URL"
+  private final val SslRedirectUrl = "SSL_REDIRECT_URL"
 
   private final val AuthorizedEntityIdParam = "authorizedEntityId"
   private final val DataSetIdParam = "dataSetId"
@@ -46,14 +43,11 @@ object PrsServer extends SrxServer {
     Environment.getProperty(DatasourceTimeoutKey).toLong
   )
 
-  lazy val serverName = Environment.getProperty(ServerName)
-  lazy val mongoDbHost = Environment.getProperty(MongoDbHost)
-  lazy val mongoDbPort = Environment.getProperty(MongoDbPort)
   lazy val mongoDbName = Environment.getProperty(MongoDbName)
-  lazy val mongoDbPassword = Environment.getProperty(MongoDbPassword).orElse("")
   lazy val mongoUserSalt = Environment.getProperty(MongoUserSalt)
   lazy val mongoUserHashedPassword = Environment.getProperty(MongoUserHashedPassword)
   lazy val mongoUrl = Environment.getProperty(MongoUrl)
+  lazy val sslRedirectUrl = Environment.getProperty(SslRedirectUrl)
 
   val sifProvider: SifProvider = new SifProvider(
     SifProviderUrl(Environment.getProperty(ServerUrlKey)),

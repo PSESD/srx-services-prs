@@ -173,6 +173,7 @@ object ExternalService extends PrsEntityService {
     val externalServiceResult = ExternalService.query(List[SifRequestParameter](SifRequestParameter("id", id.get.toString)))
     val externalServiceXml = externalServiceResult.toXml.get
     val authorizedEntityId = (externalServiceXml \ "externalService" \ "authorizedEntityId").text
+    val authorizedEntityXml = AuthorizedEntity.query(List[SifRequestParameter](SifRequestParameter("id", authorizedEntityId))).toXml.get
 
     if (id.isEmpty || id.get == -1) {
       SrxResourceErrorResult(SifHttpStatusCode.BadRequest, new ArgumentInvalidException("id parameter"))
@@ -189,7 +190,7 @@ object ExternalService extends PrsEntityService {
 
         if (result.success) {
           val mongoDataSource = new MongoDataSource
-          mongoDataSource.deleteOrganization(authorizedEntityId)
+          mongoDataSource.deleteOrganization(authorizedEntityXml)
 
           PrsServer.logSuccessMessage(
             PrsResource.ExternalServices.toString,

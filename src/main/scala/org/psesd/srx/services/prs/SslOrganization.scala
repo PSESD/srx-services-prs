@@ -21,7 +21,7 @@ object SslOrganization extends SslEntity{
 
     var organization = Document("name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text,
       "website" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
-      "url" -> PrsServer.serverName,
+      "url" -> PrsServer.sslRedirectUrl,
       "authorizedEntityId" -> (authorizedEntityXml \ "authorizedEntity" \ "id").text.toInt,
       "externalServiceId" -> externalServiceId,
       "updated_at" -> timestamp)
