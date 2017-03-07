@@ -249,7 +249,8 @@ object Student extends PrsEntityService {
       val doc: Document = Document(
         "_id" -> bson.BsonObjectId(String.format("%024x", new BigInteger(1, studentDbId.getBytes))),
         "district_student_id" -> student.districtStudentId,
-        "organization" -> orgId
+        "organization" -> orgId,
+        "school_district" -> requestParams("zoneId").getOrElse("")
       )
 
       //perform insert
