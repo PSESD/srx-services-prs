@@ -1,6 +1,10 @@
 package org.psesd.srx.services.prs
 
+import java.math.BigInteger
+import java.util.concurrent.TimeUnit
+
 import org.json4s.JValue
+import org.mongodb.scala.model.Filters
 import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
 import org.psesd.srx.shared.core._
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ArgumentNullException, SrxResourceNotFoundException}
@@ -8,9 +12,12 @@ import org.psesd.srx.shared.core.extensions.TypeExtensions._
 import org.psesd.srx.shared.core.sif.SifRequestAction._
 import org.psesd.srx.shared.core.sif.{SifHttpStatusCode, SifRequestAction, SifRequestParameter, SifRequestParameterCollection, SifZone}
 import org.psesd.srx.shared.data.exceptions.DatasourceDuplicateViolationException
-import org.psesd.srx.shared.data.{Datasource, DatasourceResult}
+import org.psesd.srx.shared.data.{DataRow, Datasource, DatasourceResult}
+import org.mongodb.scala.{Completed, Document, MongoCollection, Observer, Subscription, bson}
 
+import scala.concurrent.duration.Duration
 import scala.collection.mutable.ArrayBuffer
+import scala.concurrent.Await
 import scala.xml.Node
 
 /** Represents a Student.
@@ -175,6 +182,9 @@ object Student extends PrsEntityService {
           refreshResult.statusCode.toString,
           "Xsre refresh request submitted for student " + student.districtStudentId)
 
+
+        insertStudentIntoSSLDatabase(student, requestParams, result.id.get)
+
         val responseFormat = SrxResponseFormat.getResponseFormat(parameters)
         if(responseFormat.equals(SrxResponseFormat.Object)) {
             val queryResult = executeQuery(Some(result.id.get.toInt), None, None)
@@ -213,6 +223,67 @@ object Student extends PrsEntityService {
     }
 
   }
+
+  private def insertStudentIntoSSLDatabase(student: Student, requestParams: SifRequestParameterCollection, studentDbId : String) : Unit = {
+    val sslDataSource = new MongoDataSource
+    val students = sslDataSource.retrieveCollection("students")
+    val organizationsCollection : MongoCollection[Document] = sslDataSource.retrieveCollection("organizations")
+
+    //retrieve organization info necessary for saving student into SSL db
+    val organization = DistrictService.query(List[SifRequestParameter] {SifRequestParameter("id", student.districtServiceId.toString)})
+
+    //query SSL db for organization id
+    val aeId : Int = (organization.toXml.get \\ "authorizedEntityId").text.toInt
+    val esId : Int = (organization.toXml.get \\"externalServiceId").text.toInt
+
+    val org = organizationsCollection
+        .find(Filters.and(Filters.equal("authorizedEntityId", aeId), Filters.equal("externalServiceId", esId)))
+        .first()
+
+    val orgResponse = Await.result(org.toFuture, Duration(10, TimeUnit.SECONDS))
+
+    if (orgResponse != null && orgResponse.nonEmpty && orgResponse.head.nonEmpty) {
+      val orgId = orgResponse.head.get("_id").get.asObjectId()
+
+      //create student to insert
+      val doc: Document = Document(
+        "_id" -> bson.BsonObjectId(String.format("%024x", new BigInteger(1, studentDbId.getBytes))),
+        "district_student_id" -> student.districtStudentId,
+        "organization" -> orgId
+      )
+
+      //perform insert
+      students.insertOne(doc).subscribe(new Observer[Completed] {
+        override def onNext(result: Completed): Unit = {
+          PrsServer.logSuccessMessage(
+            "SSLStudentInsert",
+            SifRequestAction.Create.toString,
+            Some(student.districtStudentId),
+            requestParams,
+            Some(student.toXml.toXmlString)
+          )
+        }
+
+        override def onError(e: Throwable) = {
+          PrsServer.logMessage("SSLStudentInsert",
+            SifRequestAction.Create.toString,
+            Some(SifZone(requestParams("zoneId").get)),
+            Some(student.districtStudentId),
+            requestParams,
+            None,
+            "",
+            e.getMessage)
+          sslDataSource.close
+        }
+
+        override def onComplete(): Unit = {
+          sslDataSource.close
+        }
+      })
+    }
+
+  }
+
 
   def delete(parameters: List[SifRequestParameter]): SrxResourceResult = {
     val id = getKeyIdFromRequestParameters(parameters)
