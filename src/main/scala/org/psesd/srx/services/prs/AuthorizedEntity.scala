@@ -323,7 +323,6 @@ object AuthorizedEntity extends PrsEntityService {
       if (id.isEmpty || id.get == -1) {
         SrxResourceErrorResult(SifHttpStatusCode.BadRequest, new ArgumentInvalidException("id parameter"))
       } else {
-        val email = authorizedEntity.mainContact.get.email
 
         val datasource = new Datasource(datasourceConfig)
 
@@ -353,7 +352,7 @@ object AuthorizedEntity extends PrsEntityService {
 
         if (result.success) {
           val mongoDataSource = new MongoDataSource
-          mongoDataSource.updateOrganization(id.get.toString, email.get)
+          mongoDataSource.updateOrganization(id.get.toString, authorizedEntity.mainContact.get.email.get)
 
           PrsServer.logSuccessMessage(
             PrsResource.AuthorizedEntities.toString,

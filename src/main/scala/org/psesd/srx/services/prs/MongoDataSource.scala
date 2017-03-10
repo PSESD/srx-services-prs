@@ -72,7 +72,10 @@ class MongoDataSource {
     observable.subscribe(new Observer[Completed] {
       override def onNext(result: Completed): Unit = println("Inserted Admin User")
       override def onError(e: Throwable): Unit = println(e.toString)
-      override def onComplete(): Unit = close
+      override def onComplete(): Unit = {
+        close
+        val end = ""
+      }
     })
   }
 
