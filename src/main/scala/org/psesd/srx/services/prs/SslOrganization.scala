@@ -20,8 +20,7 @@ object SslOrganization extends SslEntity{
     val timestamp = bsonTimeStamp
 
     var organization = Document("name" -> (authorizedEntityXml \ "authorizedEntity" \ "name").text,
-      "website" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
-      "url" -> PrsServer.sslRedirectUrl,
+      "url" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "webAddress").text,
       "authorizedEntityId" -> (authorizedEntityXml \ "authorizedEntity" \ "id").text.toInt,
       "externalServiceId" -> externalServiceId,
       "updated_at" -> timestamp)
