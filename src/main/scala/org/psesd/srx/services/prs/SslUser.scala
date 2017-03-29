@@ -52,9 +52,11 @@ object SslUser extends SslEntity {
     if (contactNameArr.length == 1) {
       contactNameArr ++= Array("", "")
     } else if (contactNameArr.length == 2) {
-      contactNameArr ++= Array("")
+      contactNameArr = Array(contactNameArr(0)) ++ Array("") ++ Array(contactNameArr(1))
     }
 
+    contactNameArr
+    val test = ""
     contactNameArr
   }
 

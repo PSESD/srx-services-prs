@@ -10,7 +10,7 @@ class ExternalServiceTests extends FunSuite with BeforeAndAfterAll {
 
   var createdId: Int = 0
 
-  val contact = new Contact(0, Some("jon"), Some("director"), Some("jon@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("jon.com"))
+  val contact = new Contact(0, Some("jon doe"), Some("director"), Some("jon@doe.com"), Some("555-1212"), Some("123 Spring St"), Some("jon.com"))
   val authorizedEntity: AuthorizedEntity = AuthorizedEntity(0, "external service test", Some(contact))
   var authorizedEntityResult: AuthorizedEntityResult = _
 
