@@ -56,8 +56,6 @@ object SslUser extends SslEntity {
     }
 
     contactNameArr
-    val test = ""
-    contactNameArr
   }
 
 }
