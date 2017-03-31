@@ -74,7 +74,6 @@ class MongoDataSource {
       override def onError(e: Throwable): Unit = println(e.toString)
       override def onComplete(): Unit = {
         close
-        val end = ""
       }
     })
   }

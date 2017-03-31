@@ -398,17 +398,18 @@ object Student extends PrsEntityService {
       "district_service.district_id district_service_district_id " +
       "from srx_services_prs.student " +
       "join srx_services_prs.consent on consent.id = student.consent_id " +
-      "left join srx_services_prs.district_service on district_service.id = student.district_service_id "
+      "left join srx_services_prs.district_service on district_service.id = student.district_service_id " +
+      "where district_service.expiration_date <= (select current_date) "
     val datasource = new Datasource(datasourceConfig)
     val result = {
       if (id.isEmpty) {
         if(districtServiceIdParam.isDefined) {
-          datasource.get(selectFrom + "where student.district_service_id = ? order by student.id;", districtServiceIdParam.get.value.toInt)
+          datasource.get(selectFrom + "and student.district_service_id = ? order by student.id;", districtServiceIdParam.get.value.toInt)
         } else {
-          datasource.get(selectFrom + "where district_service.district_id = ? order by student.id;", districtIdParam.get.value.toInt)
+          datasource.get(selectFrom + "and district_service.district_id = ? order by student.id;", districtIdParam.get.value.toInt)
         }
       } else {
-        datasource.get(selectFrom + "where student.id = ?;", id.get)
+        datasource.get(selectFrom + "and student.id = ?;", id.get)
       }
     }
     datasource.close()
