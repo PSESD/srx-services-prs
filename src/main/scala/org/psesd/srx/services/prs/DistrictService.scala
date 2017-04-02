@@ -476,7 +476,7 @@ object DistrictService extends PrsEntityService {
         }
 
         datasource.close()
-val res = result
+
         if (result.success) {
           PrsServer.logSuccessMessage(
             PrsResource.DistrictServices.toString,

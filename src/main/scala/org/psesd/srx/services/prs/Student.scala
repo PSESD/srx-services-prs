@@ -1,8 +1,11 @@
 package org.psesd.srx.services.prs
 
 import java.math.BigInteger
+import java.sql.Date
+import java.text.SimpleDateFormat
 import java.util.concurrent.TimeUnit
 
+import org.joda.time.DateTime
 import org.json4s.JValue
 import org.mongodb.scala.model.Filters
 import org.psesd.srx.shared.core.SrxResponseFormat.SrxResponseFormat
@@ -160,7 +163,6 @@ object Student extends PrsEntityService {
 
       if (result.success) {
         val requestParams = SifRequestParameterCollection(parameters)
-
         PrsServer.logSuccessMessage(
           PrsResource.DistrictServiceStudents.toString,
           SifRequestAction.Create.toString,
@@ -170,7 +172,6 @@ object Student extends PrsEntityService {
         )
 
         val zone = determineBestZoneInfo(requestParams)
-
         val refreshResult = XsreRefreshRequestService.sendRequest(SifZone(zone), student.districtStudentId, requestParams("generatorId").get)
         PrsServer.logMessage(
           "XsreRefresh",
@@ -181,7 +182,6 @@ object Student extends PrsEntityService {
           None,
           refreshResult.statusCode.toString,
           "Xsre refresh request submitted for student " + student.districtStudentId)
-
 
         insertStudentIntoSSLDatabase(student, requestParams, result.id.get, zone)
 
@@ -405,7 +405,7 @@ object Student extends PrsEntityService {
         if(districtServiceIdParam.isDefined) {
           datasource.get(selectFrom + "where student.district_service_id = ? order by student.id;", districtServiceIdParam.get.value.toInt)
         } else {
-          datasource.get(selectFrom + "where district_service.district_id = ? order by student.id;", districtIdParam.get.value.toInt)
+          datasource.get(selectFrom + "where current_date >= consent.start_date and current_date <= consent.end_date and district_service.district_id = ? order by student.id;", districtIdParam.get.value.toInt)
         }
       } else {
         datasource.get(selectFrom + "where student.id = ?;", id.get)

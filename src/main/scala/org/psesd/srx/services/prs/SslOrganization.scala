@@ -13,7 +13,7 @@ import scala.xml.Node
   * @since 1.0
   * @author Margarett Ly (iTrellis, LLC)
   */
-object SslOrganization extends SslEntity{
+object SslOrganization extends SslEntity {
 
   def apply(authorizedEntityId: String, externalServiceId: BsonValue, createdAt: BsonValue = null): Document = {
     val authorizedEntityXml = getAuthorizedEntity(authorizedEntityId)
