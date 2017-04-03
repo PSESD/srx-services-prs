@@ -405,7 +405,7 @@ object Student extends PrsEntityService {
         if(districtServiceIdParam.isDefined) {
           datasource.get(selectFrom + "where student.district_service_id = ? order by student.id;", districtServiceIdParam.get.value.toInt)
         } else {
-          datasource.get(selectFrom + "where current_date >= consent.start_date and current_date <= consent.end_date and district_service.district_id = ? order by student.id;", districtIdParam.get.value.toInt)
+          datasource.get(selectFrom + "where current_date between consent.start_date and consent.end_date and district_service.district_id = ? order by student.id;", districtIdParam.get.value.toInt)
         }
       } else {
         datasource.get(selectFrom + "where student.id = ?;", id.get)
