@@ -470,7 +470,6 @@ $$
     join srx_services_prs.district on district.id = district_service.district_id
     join srx_services_prs.student on student.district_service_id = district_service.id
     join srx_services_prs.district_service_data_set on district_service_data_set.district_service_id = district_service.id
-    join srx_services_prs.consent on student.consent_id = consent.id
     join srx_services_prs.data_set on data_set.id = district_service_data_set.data_set_id
     join srx_services_prs.data_object on data_object.data_set_id = data_set.id
     left join srx_services_prs.district_service_personnel on district_service_personnel.district_service_id = district_service.id
@@ -482,6 +481,5 @@ $$
     and (personnel_id_param is null or student_personnel.personnel_id = personnel_id_param)
     and data_object.name = data_object_name_param
     and CURRENT_DATE between district_service.initiation_date and district_service.expiration_date
-    and CURRENT_DATE between consent.start_date and consent.end_date
   order by data_object.include_statement
 $$ LANGUAGE sql;
