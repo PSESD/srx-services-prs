@@ -5,6 +5,7 @@ import org.apache.http.impl.client.{CloseableHttpClient, HttpClients}
 import org.apache.http.util.EntityUtils
 import org.http4s.dsl._
 import org.http4s.{Method, Request}
+import org.joda.time.DateTime
 import org.psesd.srx.shared.core.SrxResourceType
 import org.psesd.srx.shared.core.config.Environment
 import org.psesd.srx.shared.core.exceptions.{ArgumentInvalidException, ExceptionMessage}
@@ -1153,6 +1154,28 @@ class PrsServerTests extends FunSuite {
 
   test("query filters") {
     if (Environment.isLocal) {
+      val queriedStudent = Student.query(List[SifRequestParameter](SifRequestParameter("districtServiceId", "7")))
+      val studentXml = queriedStudent.toXml.get
+
+      val districtServiceId = (studentXml \ "student" \ "districtServiceId").text
+      val districtStudentId = (studentXml \ "student" \ "districtStudentId").text
+      val consentType = (studentXml \ "student" \ "consent" \ "consentType").text
+      val startDate = (studentXml \ "student" \ "consent" \ "startDate").text
+      val endDate = DateTime.now.toString.split("T")(0)
+      val student = Student(
+        <student>
+          <districtServiceId>{districtServiceId}</districtServiceId>
+          <districtStudentId>{districtStudentId}</districtStudentId>
+          <consent>
+            <consentType>{consentType}</consentType>
+            <startDate>{startDate}</startDate>
+            <endDate>{endDate}</endDate>
+          </consent>
+        </student>,
+        None
+      )
+      Student.update(student, List[SifRequestParameter](SifRequestParameter("id", (studentXml \ "student" \ "id").text)))
+
       val resource = PrsResource.Filters.toString
       val sifRequest = new SifRequest(TestValues.sifProvider, resource, SifZone("highline"), SifContext("default"))
       sifRequest.generatorId = Some(TestValues.generatorId)
