@@ -2,6 +2,7 @@ package org.psesd.srx.services.prs
 
 import org.mongodb.scala.Document
 import org.mongodb.scala.bson.BsonValue
+import org.psesd.srx.services.prs.SslUser.{bsonTimeStamp, getAuthorizedEntity}
 
 /** Student Success Link User Model
   *
@@ -9,20 +10,19 @@ import org.mongodb.scala.bson.BsonValue
   * @since 1.0
   * @author Margarett Ly (iTrellis, LLC)
   */
-object SslUser extends SslEntity {
 
-  def apply(authorizedEntityId: String, organizationId: BsonValue, createdAt: BsonValue = null): Document = {
-    val authorizedEntityXml = getAuthorizedEntity(authorizedEntityId)
-    val mainContact = (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "name").text
-    val contact = contactName(mainContact)
-    val timestamp = bsonTimeStamp
+class SslUser (val authorizedEntityId: String, val organizationId: BsonValue, val createdAt: BsonValue = null) {
+  val authorizedEntityXml : scala.xml.Node = getAuthorizedEntity(authorizedEntityId)
+  val mainContact : String = (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "name").text
+  val contact : Array[String] = contactName(mainContact)
+  val timestamp = bsonTimeStamp
+  val email : String = (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "email").text
 
-    var userPermission = Document("organization" -> organizationId,
-      "activateStatus" -> "Active",
-      "activate" -> "true",
-      "role" -> "admin")
+  var userPermissions: List[org.mongodb.scala.bson.collection.mutable.Document] = List[org.mongodb.scala.bson.collection.mutable.Document](new UserPermission(organizationId).toDocument)
 
-    var adminUser = Document( "email" -> (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "email").text,
+  def toDocument : Document = {
+    var adminUser = Document(
+      "email" -> email,
       "first_name" -> contact(0),
       "middle_name" -> contact(1),
       "last_name" -> contact(2),
@@ -30,20 +30,22 @@ object SslUser extends SslEntity {
       "hashedPassword" -> PrsServer.mongoUserHashedPassword,
       "last_updated" -> timestamp,
       "updated_at" -> timestamp,
-      "permissions" -> List(userPermission))
+      "permissions" -> userPermissions
+    )
 
+    val createdDate = if (createdAt != null) createdAt else timestamp
 
-    if (createdAt != null) {
-      userPermission ++= Document("activateDate" -> createdAt)
-      adminUser ++= Document("created_at" -> createdAt)
-      adminUser ++= Document("created" -> createdAt)
-    } else {
-      userPermission ++= Document("activateDate" -> timestamp)
-      adminUser ++= Document("created_at" -> timestamp)
-      adminUser ++= Document("created" -> timestamp)
+    for (p <- userPermissions) {
+      p += ("activateDate" -> createdDate)
     }
+    adminUser ++= Document("created_at" -> timestamp)
+    adminUser ++= Document("created" -> timestamp)
 
     adminUser
+  }
+
+  def addOrganization(organizationId: BsonValue) : Unit = {
+    userPermissions ::= new UserPermission(organizationId).toDocument
   }
 
   private def contactName(mainContactName: String): Array[String] = {
@@ -58,4 +60,20 @@ object SslUser extends SslEntity {
     contactNameArr
   }
 
+  private class UserPermission(val organizationId: BsonValue) {
+    def toDocument : org.mongodb.scala.bson.collection.mutable.Document = {
+      org.mongodb.scala.bson.collection.mutable.Document("organization" -> organizationId,
+        "activateStatus" -> "Active",
+        "activate" -> "true",
+        "role" -> "admin")
+    }
+  }
+
+}
+
+object SslUser extends SslEntity {
+
+  def apply(authorizedEntityId: String, organizationId: BsonValue, createdAt: BsonValue = null): Document = {
+    new SslUser(authorizedEntityId, organizationId, createdAt).toDocument
+  }
 }

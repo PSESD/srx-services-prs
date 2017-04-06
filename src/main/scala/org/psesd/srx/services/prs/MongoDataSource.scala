@@ -1,11 +1,11 @@
 package org.psesd.srx.services.prs
 
-import org.bson.BsonValue
+import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.bson.{BsonInt32, BsonValue}
 import org.mongodb.scala.{Completed, Document, MongoClient, MongoCollection, MongoDatabase, Observable, Observer, Subscription}
 import org.mongodb.scala.model.Filters._
+import org.mongodb.scala.model.FindOneAndUpdateOptions
 import org.mongodb.scala.result.{DeleteResult, UpdateResult}
-import org.psesd.srx.shared.core.sif.SifRequestParameter
 
 import scala.xml.Node
 
@@ -64,13 +64,16 @@ class MongoDataSource {
   }
 
   def insertAdminUser(authorizedEntityId: String, organizationId: BsonValue): Unit = {
-    val adminUser = SslUser(authorizedEntityId, organizationId)
+    val adminUser = new SslUser(authorizedEntityId, organizationId)
     val collection = retrieveCollection("users")
 
-    val observable: Observable[Completed] = collection.insertOne(adminUser)
+    val filter: Bson = equal("email", adminUser.email)
+    val options = new FindOneAndUpdateOptions().upsert(true)
 
-    observable.subscribe(new Observer[Completed] {
-      override def onNext(result: Completed): Unit = println("Inserted Admin User")
+    val observable = collection.findOneAndUpdate(filter, adminUser.toDocument, options)
+
+    observable.subscribe(new Observer[Document] {
+      override def onNext(result: Document): Unit = println("Inserted Admin User")
       override def onError(e: Throwable): Unit = println(e.toString)
       override def onComplete(): Unit = {
         close
