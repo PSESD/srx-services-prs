@@ -78,16 +78,25 @@ class MongoDataSource {
 
     val user = Await.result(userQuery.toFuture(), Duration(10, TimeUnit.SECONDS))
 
+    val onCompleteInsert = new Observer[Completed] {
+      override def onNext(result: Completed): Unit = println("Inserted Admin User. Result: " + result.toString())
+      override def onError(e: Throwable): Unit = println("ERROR: " + e.toString)
+      override def onComplete(): Unit = {
+        close
+      }
+    }
+
+    val onCompleteUpdate = new Observer[UpdateResult] {
+      override def onNext(result: UpdateResult): Unit = println("Updated Admin User. Result: " + result.toString)
+      override def onError(e: Throwable): Unit = println("ERROR: " + e.toString)
+      override def onComplete(): Unit = {
+        close
+      }
+    }
     if (user.isEmpty) {
-      collection.insertOne(adminUser.toDocument).subscribe(new Observer[Completed] {
-        override def onNext(result: Completed): Unit = println("Inserted Admin User. Result: " + result.toString())
-        override def onError(e: Throwable): Unit = println("ERROR: " + e.toString)
-        override def onComplete(): Unit = {
-          close
-        }
-      })
+      collection.insertOne(adminUser.toDocument).subscribe(onCompleteInsert)
     } else {
-      collection.updateOne(filter, Updates.addToSet("permissions", adminUser.userPermissions.head))
+      collection.updateOne(filter, Updates.addToSet("permissions", adminUser.userPermissions.head)).subscribe(onCompleteUpdate)
     }
   }
 
