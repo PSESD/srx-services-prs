@@ -1,12 +1,17 @@
 package org.psesd.srx.services.prs
 
+import java.util.concurrent.TimeUnit
+
+import scala.concurrent.ExecutionContext.Implicits.global
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.bson.{BsonInt32, BsonValue}
 import org.mongodb.scala.{Completed, Document, MongoClient, MongoCollection, MongoDatabase, Observable, Observer, Subscription}
 import org.mongodb.scala.model.Filters._
-import org.mongodb.scala.model.FindOneAndUpdateOptions
+import org.mongodb.scala.model.{FindOneAndUpdateOptions, UpdateOptions, Updates}
 import org.mongodb.scala.result.{DeleteResult, UpdateResult}
 
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.Duration
 import scala.xml.Node
 
 /** MongoDB Connection for Student Success Link Data
@@ -68,17 +73,22 @@ class MongoDataSource {
     val collection = retrieveCollection("users")
 
     val filter: Bson = equal("email", adminUser.email)
-    val options = new FindOneAndUpdateOptions().upsert(true)
 
-    val observable = collection.findOneAndUpdate(filter, adminUser.toDocument, options)
+    val userQuery = collection.find(filter).first()
 
-    observable.subscribe(new Observer[Document] {
-      override def onNext(result: Document): Unit = println("Inserted Admin User")
-      override def onError(e: Throwable): Unit = println(e.toString)
-      override def onComplete(): Unit = {
-        close
-      }
-    })
+    val user = Await.result(userQuery.toFuture(), Duration(10, TimeUnit.SECONDS))
+
+    if (user.isEmpty) {
+      collection.insertOne(adminUser.toDocument).subscribe(new Observer[Completed] {
+        override def onNext(result: Completed): Unit = println("Inserted Admin User. Result: " + result.toString())
+        override def onError(e: Throwable): Unit = println("ERROR: " + e.toString)
+        override def onComplete(): Unit = {
+          close
+        }
+      })
+    } else {
+      collection.updateOne(filter, Updates.addToSet("permissions", adminUser.userPermissions.head))
+    }
   }
 
   def insertOrganization(authorizedEntityId: String, externalServiceId: String): Unit = {
@@ -106,7 +116,8 @@ class MongoDataSource {
         val organizationId = result.get("_id").get
         insertAdminUser(authorizedEntityId, organizationId)
       }
-      override def onError(e: Throwable): Unit = println("Failed" + e.getMessage)
+      override def onError(e: Throwable): Unit = {
+      }
       override def onComplete(): Unit = println("Queried Organization")
     })
   }
