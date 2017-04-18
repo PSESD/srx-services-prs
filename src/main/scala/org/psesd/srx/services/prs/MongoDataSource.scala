@@ -58,6 +58,11 @@ class MongoDataSource {
   def deleteOrganization(authorizedEntityXml: Node): Unit = {
     val authorizedEntityId = (authorizedEntityXml \ "authorizedEntity" \ "id").text
     val collection = retrieveCollection("organizations")
+
+
+
+
+
     val observable: Observable[DeleteResult] = collection.deleteOne(equal("authorizedEntityId", BsonInt32(authorizedEntityId.toInt)))
 
     observable.subscribe(new Observer[DeleteResult] {
@@ -109,15 +114,12 @@ class MongoDataSource {
     observable.subscribe(new Observer[Completed] {
       override def onNext(result: Completed): Unit = println("Inserted Organization")
       override def onError(e: Throwable): Unit = println(e.toString)
-      override def onComplete(): Unit = {
-        val authorizedEntityName = organization.get("name").get
-        queryOrganization(collection, authorizedEntityId, authorizedEntityName)
-      }
+      override def onComplete(): Unit = queryOrganization(collection, authorizedEntityId)
     })
   }
 
-  def queryOrganization(collection: MongoCollection[Document], authorizedEntityId: String, authorizedEntityName: BsonValue): Unit = {
-    val observable: Observable[Document] = collection.find(equal("name", authorizedEntityName))
+  def queryOrganization(collection: MongoCollection[Document], authorizedEntityId: String): Unit = {
+    val observable: Observable[Document] = collection.find(equal("authorizedEntityId", authorizedEntityId.toInt))
 
     observable.subscribe(new Observer[Document] {
       override def onSubscribe(subscription: Subscription): Unit = subscription.request(1)
@@ -125,8 +127,7 @@ class MongoDataSource {
         val organizationId = result.get("_id").get
         insertAdminUser(authorizedEntityId, organizationId)
       }
-      override def onError(e: Throwable): Unit = {
-      }
+      override def onError(e: Throwable): Unit = println(e.toString)
       override def onComplete(): Unit = println("Queried Organization")
     })
   }
