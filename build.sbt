@@ -52,14 +52,9 @@ libraryDependencies ++= Seq(
   "org.apache.poi" % "poi" % apachePoiVersion
 )
 
-//Casbah MongoDB Driver
-//libraryDependencies ++= Seq(
-//  "org.mongodb" % "casbah-core_2.9.1" % casbahVersion
-//)
-
 // Mongo Scala Driver
 libraryDependencies ++= Seq(
-  "org.mongodb.scala" % "mongo-scala-driver_2.11" % mongoScalaDriverVersion
+    "org.mongodb.scala" % "mongo-scala-driver_2.11" % mongoScalaDriverVersion
 )
 
 // Build info

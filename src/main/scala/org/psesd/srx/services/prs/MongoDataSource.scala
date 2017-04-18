@@ -2,9 +2,8 @@ package org.psesd.srx.services.prs
 
 import java.util.concurrent.TimeUnit
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import org.mongodb.scala.bson.conversions.Bson
-import org.mongodb.scala.bson.{BsonInt32, BsonValue}
+import org.mongodb.scala.bson.{BsonDocument, BsonInt32, BsonString, BsonValue}
 import org.mongodb.scala.{Completed, Document, MongoClient, MongoCollection, MongoDatabase, Observable, Observer, Subscription}
 import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.{FindOneAndUpdateOptions, UpdateOptions, Updates}
@@ -41,17 +40,47 @@ class MongoDataSource {
     mongoDb.getCollection(name)
   }
 
-  private def deleteAdminUser(authorizedEntityXml: Node): Unit = {
+  private def deleteAdminUserPermissionOrRecord(authorizedEntityXml: Node, organizationId: BsonValue): Unit = {
     val collection = retrieveCollection("users")
-
     val email = (authorizedEntityXml \ "authorizedEntity" \ "mainContact" \ "email").text
-    val observable: Observable[DeleteResult] = collection.deleteOne(equal("email", email))
 
-    observable.subscribe(new Observer[DeleteResult] {
+    val queriedObservable: Observable[Document] = collection.find(equal("email", email))
+
+    queriedObservable.subscribe(new Observer[Document] {
       override def onSubscribe(subscription: Subscription): Unit = subscription.request(1)
-      override def onNext(result: DeleteResult): Unit = println("Deleted Admin User")
+      override def onNext(result: Document): Unit = {
+        val userPermissions = result.get("permissions").get.asArray()
+        val userPermissionsClone = userPermissions.clone.listIterator()
+
+        while (userPermissionsClone.hasNext) {
+          val permission = userPermissionsClone.next
+          if (permission.asDocument.get("organization") == organizationId) {
+            userPermissions.remove(permission)
+          }
+        }
+
+        if (userPermissions.size == 0) {
+          val deletedObservable: Observable[DeleteResult] = collection.deleteOne(equal("email", email))
+
+          deletedObservable.subscribe(new Observer[DeleteResult] {
+            override def onSubscribe(subscription: Subscription): Unit = subscription.request(1)
+            override def onNext(result: DeleteResult): Unit = println("Deleted Admin User")
+            override def onError(e: Throwable): Unit = println(e.toString)
+            override def onComplete(): Unit = close
+          })
+        } else {
+          val updateObservable: Observable[UpdateResult] = collection.updateOne(equal("email", email), Updates.addToSet("permissions", userPermissions))
+
+          updateObservable.subscribe(new Observer[UpdateResult] {
+            override def onSubscribe(subscription: Subscription): Unit = subscription.request(1)
+            override def onNext(updatedResult: UpdateResult): Unit = println("Updating User")
+            override def onError(e: Throwable): Unit = println("Failed" + e.getMessage)
+            override def onComplete(): Unit = close
+          })
+        }
+      }
       override def onError(e: Throwable): Unit = println(e.toString)
-      override def onComplete(): Unit = close
+      override def onComplete(): Unit = println("Queried Admin User")
     })
   }
 
@@ -59,17 +88,25 @@ class MongoDataSource {
     val authorizedEntityId = (authorizedEntityXml \ "authorizedEntity" \ "id").text
     val collection = retrieveCollection("organizations")
 
+    val queriedObservable: Observable[Document] = collection.find(equal("authorizedEntityId", authorizedEntityId.toInt))
 
-
-
-
-    val observable: Observable[DeleteResult] = collection.deleteOne(equal("authorizedEntityId", BsonInt32(authorizedEntityId.toInt)))
-
-    observable.subscribe(new Observer[DeleteResult] {
+    queriedObservable.subscribe(new Observer[Document] {
       override def onSubscribe(subscription: Subscription): Unit = subscription.request(1)
-      override def onNext(result: DeleteResult): Unit = deleteAdminUser(authorizedEntityXml)
-      override def onError(e: Throwable): Unit = println("Failed" + e.getMessage)
-      override def onComplete(): Unit = println("Deleted Organization")
+      override def onNext(result: Document): Unit = {
+        val organizationId = result.get("_id").get
+        deleteAdminUserPermissionOrRecord(authorizedEntityXml, organizationId)
+
+        val deletedObservable: Observable[DeleteResult] = collection.deleteOne(equal("authorizedEntityId", BsonInt32(authorizedEntityId.toInt)))
+
+        deletedObservable.subscribe(new Observer[DeleteResult] {
+          override def onSubscribe(subscription: Subscription): Unit = subscription.request(1)
+          override def onNext(result: DeleteResult) = {}
+          override def onError(e: Throwable): Unit = println("Failed" + e.getMessage)
+          override def onComplete(): Unit = println("Deleted Organization")
+        })
+      }
+      override def onError(e: Throwable): Unit = println(e.toString)
+      override def onComplete(): Unit = println("Queried Organization")
     })
   }
 

@@ -348,7 +348,7 @@ class PrsServerTests extends FunSuite {
       sifRequest.body = Some(student.toXml.toXmlString)
       // println("CREATE RESOURCE: %s".format(resource))
       val response = new SifConsumer().create(sifRequest)
-      // printlnResponse(response)
+//       printlnResponse(response)
       districtServiceStudentId = (response.getBodyXml.get \ "creates" \ "create" \ "@id").text.toInt
       assert(response.statusCode.equals(SifHttpStatusCode.Created))
     }
