@@ -109,7 +109,7 @@ class PrsFilterTests extends FunSuite {
   }
 
   test("query valid") {
-    val queriedStudent = Student.query(List[SifRequestParameter](SifRequestParameter("districtServiceId", "7")))
+    val queriedStudent = Student.query(List[SifRequestParameter](SifRequestParameter("districtServiceId", "6")))
     val studentXml = queriedStudent.toXml.get
 
     val districtServiceId = (studentXml \ "student" \ "districtServiceId").text
@@ -129,14 +129,13 @@ class PrsFilterTests extends FunSuite {
       </student>,
       None
     )
-    Student.update(student, List[SifRequestParameter](SifRequestParameter("id", (studentXml \ "student" \ "id").text)))
+    var s = Student.update(student, List[SifRequestParameter](SifRequestParameter("id", (studentXml \ "student" \ "id").text)))
 
     val result = PrsFilter.query(List[SifRequestParameter](
       SifRequestParameter("authorizedEntityId", "1"),
-      SifRequestParameter("districtStudentId", "9999999999"),
-      SifRequestParameter("externalServiceId", "2"),
+      SifRequestParameter("districtStudentId", "8888888888"),
+      SifRequestParameter("externalServiceId", "1"),
       SifRequestParameter("objectType", "sre"),
-      SifRequestParameter("personnelId", "3"),
       SifRequestParameter("zoneId", "highline")
     ))
     assert(result.success)

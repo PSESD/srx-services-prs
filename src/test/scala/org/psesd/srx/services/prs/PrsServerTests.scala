@@ -1154,7 +1154,7 @@ class PrsServerTests extends FunSuite {
 
   test("query filters") {
     if (Environment.isLocal) {
-      val queriedStudent = Student.query(List[SifRequestParameter](SifRequestParameter("districtServiceId", "7")))
+      val queriedStudent = Student.query(List[SifRequestParameter](SifRequestParameter("districtServiceId", "6")))
       val studentXml = queriedStudent.toXml.get
 
       val districtServiceId = (studentXml \ "student" \ "districtServiceId").text
@@ -1180,10 +1180,9 @@ class PrsServerTests extends FunSuite {
       val sifRequest = new SifRequest(TestValues.sifProvider, resource, SifZone("highline"), SifContext("default"))
       sifRequest.generatorId = Some(TestValues.generatorId)
       sifRequest.addHeader("authorizedEntityId", "1")
-      sifRequest.addHeader("districtStudentId", "9999999999")
-      sifRequest.addHeader("externalServiceId", "2")
+      sifRequest.addHeader("districtStudentId", "8888888888")
+      sifRequest.addHeader("externalServiceId", "1")
       sifRequest.addHeader("objectType", "sre")
-      sifRequest.addHeader("personnelId", "3")
       // println("QUERY RESOURCE: %s".format(resource))
       val response = new SifConsumer().query(sifRequest)
       // printlnResponse(response)
